@@ -1,0 +1,2178 @@
+<!DOCTYPE html>
+<html lang="ru">
+<head>
+<meta charset="UTF-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover" />
+<meta name="theme-color" content="#2E75B6" />
+<meta name="description" content="CEO Daily Drill — тренажёр ежедневных управленческих привычек генерального директора." />
+<title>CEO Daily Drill</title>
+
+<!-- Chart.js (единственная внешняя зависимость) -->
+<script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.1/dist/chart.umd.min.js"></script>
+
+<style>
+/* ============================================================
+   ТОКЕНЫ ДИЗАЙНА
+   ============================================================ */
+:root{
+  --bg: #F7F8FA;
+  --surface: #FFFFFF;
+  --surface-2: #F1F3F7;
+  --border: #E4E7EC;
+  --text: #1A1D21;
+  --text-muted: #6B7280;
+  --accent: #2E75B6;
+  --accent-hover: #1F5A91;
+  --accent-soft: #E8F1FA;
+  --success: #2E7D32;
+  --success-soft: #E6F4EA;
+  --warning: #ED6C02;
+  --warning-soft: #FFF3E5;
+  --danger: #C62828;
+  --danger-soft: #FCE8E8;
+  --shadow-sm: 0 1px 2px rgba(16,24,40,.05);
+  --shadow-md: 0 4px 12px rgba(16,24,40,.08);
+  --shadow-lg: 0 10px 30px rgba(16,24,40,.10);
+  --radius-sm: 8px;
+  --radius-md: 12px;
+  --radius-lg: 16px;
+  --radius-xl: 20px;
+  --nav-height: 64px;
+  --sidebar-w: 260px;
+  --max-w: 1200px;
+  --font: system-ui, -apple-system, "Segoe UI", Roboto, "Helvetica Neue", Arial, sans-serif;
+  --transition: 200ms cubic-bezier(.2,.7,.3,1);
+}
+[data-theme="dark"]{
+  --bg: #0F1419;
+  --surface: #181D24;
+  --surface-2: #222831;
+  --border: #2A313B;
+  --text: #E7EAEE;
+  --text-muted: #98A2B3;
+  --accent: #4A9BE0;
+  --accent-hover: #72B4EA;
+  --accent-soft: #1A2B3D;
+  --success: #4CAF50;
+  --success-soft: #14301A;
+  --warning: #FFA726;
+  --warning-soft: #3A2810;
+  --danger: #EF5350;
+  --danger-soft: #3A1414;
+  --shadow-sm: 0 1px 2px rgba(0,0,0,.4);
+  --shadow-md: 0 4px 12px rgba(0,0,0,.4);
+  --shadow-lg: 0 10px 30px rgba(0,0,0,.5);
+}
+
+/* ============================================================
+   СБРОС И ОСНОВА
+   ============================================================ */
+*,*::before,*::after{box-sizing:border-box}
+html,body{margin:0;padding:0;height:100%}
+body{
+  font-family: var(--font);
+  background: var(--bg);
+  color: var(--text);
+  font-size: 16px;
+  line-height: 1.5;
+  -webkit-font-smoothing: antialiased;
+  -moz-osx-font-smoothing: grayscale;
+  transition: background var(--transition), color var(--transition);
+  padding-bottom: env(safe-area-inset-bottom);
+}
+button{font-family:inherit;cursor:pointer;border:none;background:none;color:inherit}
+input,select,textarea{font-family:inherit;font-size:inherit;color:inherit}
+h1,h2,h3,h4{margin:0;font-weight:700;letter-spacing:-.01em}
+h1{font-size:28px}
+h2{font-size:22px}
+h3{font-size:18px}
+p{margin:0}
+::selection{background:var(--accent-soft);color:var(--accent)}
+
+/* ============================================================
+   СКЕЛЕТ МАКЕТА
+   ============================================================ */
+.app{
+  min-height: 100%;
+  display: flex;
+  flex-direction: column;
+}
+
+/* Шапка (мобилка) / верхняя на планшете */
+.topbar{
+  position: sticky; top: 0; z-index: 50;
+  background: color-mix(in srgb, var(--surface) 92%, transparent);
+  backdrop-filter: saturate(180%) blur(12px);
+  -webkit-backdrop-filter: saturate(180%) blur(12px);
+  border-bottom: 1px solid var(--border);
+  padding: 12px 16px;
+  padding-top: calc(12px + env(safe-area-inset-top));
+  display: flex;
+  align-items: center;
+  gap: 12px;
+}
+.topbar .brand{
+  display:flex;align-items:center;gap:10px;
+  font-weight:700;font-size:16px;
+  flex:1;min-width:0;
+}
+.brand-mark{
+  width:32px;height:32px;border-radius:8px;
+  background:linear-gradient(135deg,var(--accent),var(--accent-hover));
+  display:grid;place-items:center;
+  color:#fff;font-weight:800;font-size:14px;
+  flex-shrink:0;
+}
+.topbar .icon-btn{
+  width:40px;height:40px;border-radius:10px;
+  display:grid;place-items:center;
+  color:var(--text-muted);
+  transition: background var(--transition), color var(--transition);
+}
+.topbar .icon-btn:hover{background:var(--surface-2);color:var(--text)}
+
+/* Основная область */
+.main{
+  flex:1;
+  padding: 20px 16px 100px;
+  max-width: var(--max-w);
+  margin: 0 auto;
+  width: 100%;
+}
+
+/* Нижняя навигация (мобилка) */
+.bottom-nav{
+  position: fixed; left:0; right:0; bottom:0; z-index: 60;
+  background: color-mix(in srgb, var(--surface) 95%, transparent);
+  backdrop-filter: saturate(180%) blur(12px);
+  -webkit-backdrop-filter: saturate(180%) blur(12px);
+  border-top: 1px solid var(--border);
+  display: grid;
+  grid-template-columns: repeat(5,1fr);
+  padding-bottom: env(safe-area-inset-bottom);
+}
+.bottom-nav button{
+  display:flex;flex-direction:column;align-items:center;gap:2px;
+  padding:10px 4px;
+  color: var(--text-muted);
+  font-size: 11px;
+  font-weight: 500;
+  transition: color var(--transition);
+  position: relative;
+}
+.bottom-nav button.active{color:var(--accent)}
+.bottom-nav button.active::before{
+  content:"";position:absolute;top:0;left:50%;transform:translateX(-50%);
+  width:28px;height:3px;border-radius:0 0 3px 3px;background:var(--accent);
+}
+.bottom-nav svg{width:22px;height:22px}
+
+/* Сайдбар (десктоп) */
+.sidebar{display:none}
+
+/* ============================================================
+   АДАПТИВ
+   ============================================================ */
+@media (min-width: 1024px){
+  .app{flex-direction:row}
+  .sidebar{
+    display:flex;flex-direction:column;
+    width:var(--sidebar-w);
+    background:var(--surface);
+    border-right:1px solid var(--border);
+    padding:20px 16px;
+    position:sticky;top:0;height:100vh;
+    overflow-y:auto;
+    flex-shrink:0;
+  }
+  .sidebar .brand{
+    display:flex;align-items:center;gap:10px;
+    font-weight:700;font-size:17px;
+    padding: 8px 10px 24px;
+  }
+  .sidebar nav{display:flex;flex-direction:column;gap:4px;flex:1}
+  .sidebar nav button{
+    display:flex;align-items:center;gap:12px;
+    padding:12px 14px;border-radius:10px;
+    color:var(--text-muted);font-weight:500;font-size:15px;
+    text-align:left;
+    transition: background var(--transition), color var(--transition);
+  }
+  .sidebar nav button:hover{background:var(--surface-2);color:var(--text)}
+  .sidebar nav button.active{background:var(--accent-soft);color:var(--accent)}
+  .sidebar nav svg{width:20px;height:20px;flex-shrink:0}
+  .sidebar-footer{padding-top:16px;border-top:1px solid var(--border);display:flex;flex-direction:column;gap:4px}
+  .sidebar-footer button{
+    display:flex;align-items:center;gap:10px;
+    padding:10px 12px;border-radius:8px;
+    color:var(--text-muted);font-size:14px;text-align:left;
+    transition: background var(--transition);
+  }
+  .sidebar-footer button:hover{background:var(--surface-2);color:var(--text)}
+  .topbar{display:none}
+  .bottom-nav{display:none}
+  .main{padding: 28px 32px 40px}
+  .wrapper{display:flex;flex:1;min-width:0}
+}
+@media (min-width: 768px) and (max-width: 1023px){
+  .main{padding: 24px 24px 100px}
+}
+
+/* ============================================================
+   КАРТОЧКИ И ОБЩИЕ КОМПОНЕНТЫ
+   ============================================================ */
+.card{
+  background: var(--surface);
+  border: 1px solid var(--border);
+  border-radius: var(--radius-lg);
+  padding: 20px;
+  box-shadow: var(--shadow-sm);
+  transition: border-color var(--transition), box-shadow var(--transition);
+}
+.card + .card{margin-top:16px}
+.card h2{margin-bottom:4px}
+.card .subtitle{color:var(--text-muted);font-size:14px;margin-bottom:16px}
+
+.btn{
+  display:inline-flex;align-items:center;justify-content:center;gap:8px;
+  padding:10px 18px;border-radius:10px;
+  font-weight:600;font-size:14px;
+  transition: all var(--transition);
+  min-height:40px;
+}
+.btn-primary{background:var(--accent);color:#fff}
+.btn-primary:hover{background:var(--accent-hover)}
+.btn-secondary{background:var(--surface-2);color:var(--text)}
+.btn-secondary:hover{background:var(--border)}
+.btn-ghost{color:var(--text-muted)}
+.btn-ghost:hover{background:var(--surface-2);color:var(--text)}
+.btn-danger{background:var(--danger-soft);color:var(--danger)}
+.btn-danger:hover{background:var(--danger);color:#fff}
+.btn:disabled{opacity:.5;cursor:not-allowed}
+
+.input, .textarea, .select{
+  width:100%;
+  background:var(--surface);
+  border:1px solid var(--border);
+  border-radius:10px;
+  padding:10px 14px;
+  font-size:15px;
+  transition: border-color var(--transition), background var(--transition);
+}
+.input:focus, .textarea:focus, .select:focus{
+  outline:none;border-color:var(--accent);background:var(--surface);
+}
+.textarea{min-height:72px;resize:vertical;font-family:inherit}
+
+/* ============================================================
+   ПРИВЕТСТВИЕ + КРУГОВОЙ ПРОГРЕСС
+   ============================================================ */
+.hero{
+  display:flex;align-items:center;justify-content:space-between;
+  gap:16px;margin-bottom:20px;
+  background: var(--surface);
+  border:1px solid var(--border);
+  border-radius: var(--radius-xl);
+  padding:20px;
+  box-shadow: var(--shadow-sm);
+}
+.hero .greeting{min-width:0;flex:1}
+.hero .date{color:var(--text-muted);font-size:13px;text-transform:capitalize}
+.hero .hello{font-size:22px;font-weight:700;margin-top:4px;line-height:1.2}
+.hero .streak-chip{
+  display:inline-flex;align-items:center;gap:6px;
+  margin-top:10px;padding:6px 10px;border-radius:999px;
+  background:var(--warning-soft);color:var(--warning);
+  font-size:12px;font-weight:600;
+}
+.ring{
+  --size:84px;--stroke:9px;--pct:0;
+  width:var(--size);height:var(--size);
+  position:relative;flex-shrink:0;
+}
+.ring svg{transform:rotate(-90deg)}
+.ring circle{fill:none;stroke-width:var(--stroke);stroke-linecap:round}
+.ring .bg{stroke:var(--surface-2)}
+.ring .fg{stroke:var(--accent);transition: stroke-dashoffset 500ms cubic-bezier(.2,.7,.3,1)}
+.ring .label{
+  position:absolute;inset:0;display:grid;place-items:center;
+  font-weight:700;font-size:18px;color:var(--text);
+}
+
+/* ============================================================
+   ТРИ ГЛАВНЫЕ ЗАДАЧИ
+   ============================================================ */
+.top3{
+  background: linear-gradient(135deg, var(--accent-soft), var(--surface));
+  border:1px solid var(--border);
+  border-radius: var(--radius-lg);
+  padding:18px;
+  margin-bottom:16px;
+}
+.top3 h3{display:flex;align-items:center;gap:8px;font-size:16px;margin-bottom:12px}
+.top3 h3 .badge{
+  background:var(--accent);color:#fff;font-size:11px;font-weight:700;
+  padding:3px 8px;border-radius:999px;
+}
+.top3 .task-row{
+  display:flex;align-items:center;gap:12px;
+  padding:8px 0;
+}
+.top3 .task-row + .task-row{border-top:1px solid var(--border)}
+.top3 .task-num{
+  width:24px;height:24px;border-radius:50%;
+  background:var(--surface);border:1px solid var(--border);
+  display:grid;place-items:center;
+  font-size:12px;font-weight:700;color:var(--accent);
+  flex-shrink:0;
+}
+.top3 input.task-input{
+  flex:1;background:transparent;border:none;outline:none;
+  font-size:15px;padding:4px 0;
+  color:var(--text);
+}
+.top3 input.task-input::placeholder{color:var(--text-muted)}
+.top3 .task-row.done input.task-input{text-decoration:line-through;color:var(--text-muted)}
+
+/* ============================================================
+   АККОРДЕОН БЛОКОВ УТРО/ДЕНЬ/ВЕЧЕР
+   ============================================================ */
+.accordion{
+  background:var(--surface);
+  border:1px solid var(--border);
+  border-radius: var(--radius-lg);
+  overflow:hidden;
+  margin-bottom:12px;
+  box-shadow: var(--shadow-sm);
+}
+.accordion-head{
+  display:flex;align-items:center;justify-content:space-between;gap:12px;
+  padding:16px 18px;
+  width:100%;text-align:left;
+  transition: background var(--transition);
+}
+.accordion-head:hover{background:var(--surface-2)}
+.accordion-title{display:flex;align-items:center;gap:12px;min-width:0;flex:1}
+.accordion-emoji{font-size:22px}
+.accordion-text{min-width:0}
+.accordion-text h3{font-size:16px;margin-bottom:2px}
+.accordion-text .meta{font-size:12px;color:var(--text-muted)}
+.accordion-progress{
+  display:flex;align-items:center;gap:10px;flex-shrink:0;
+}
+.progress-bar{
+  width:60px;height:6px;background:var(--surface-2);border-radius:999px;overflow:hidden;
+}
+.progress-bar-fill{height:100%;background:var(--accent);border-radius:999px;transition: width 400ms ease}
+.accordion-chevron{
+  color:var(--text-muted);
+  transition: transform var(--transition);
+}
+.accordion.open .accordion-chevron{transform:rotate(180deg)}
+.accordion-body{
+  display:none;
+  padding:4px 8px 12px;
+  border-top:1px solid var(--border);
+}
+.accordion.open .accordion-body{display:block;animation: fade 250ms ease}
+@keyframes fade{from{opacity:0;transform:translateY(-4px)}to{opacity:1;transform:none}}
+
+/* ============================================================
+   ЧЕКБОКСЫ ЗАДАЧ
+   ============================================================ */
+.task{
+  display:flex;align-items:flex-start;gap:12px;
+  padding:10px 10px;border-radius:10px;
+  transition: background var(--transition);
+}
+.task:hover{background:var(--surface-2)}
+.task .checkbox{
+  flex-shrink:0;
+  width:26px;height:26px;border-radius:8px;
+  border:2px solid var(--border);
+  background:var(--surface);
+  display:grid;place-items:center;
+  cursor:pointer;
+  transition: all var(--transition);
+  margin-top:1px;
+}
+.task .checkbox:hover{border-color:var(--accent)}
+.task .checkbox svg{
+  width:16px;height:16px;color:#fff;
+  opacity:0;transform:scale(.6);
+  transition: all var(--transition);
+}
+.task.done .checkbox{background:var(--success);border-color:var(--success)}
+.task.done .checkbox svg{opacity:1;transform:scale(1)}
+.task .task-body{flex:1;min-width:0}
+.task .task-text{font-size:15px;line-height:1.4;word-break:break-word}
+.task.done .task-text{text-decoration:line-through;color:var(--text-muted)}
+.task .note-btn{
+  color:var(--text-muted);width:32px;height:32px;border-radius:8px;
+  display:grid;place-items:center;
+  transition: background var(--transition), color var(--transition);
+  flex-shrink:0;
+}
+.task .note-btn:hover{background:var(--surface-2);color:var(--accent)}
+.task .note-btn.has-note{color:var(--accent)}
+.task .note-wrap{
+  margin-top:8px;display:none;
+}
+.task.note-open .note-wrap{display:block;animation: fade 200ms ease}
+
+/* ============================================================
+   УНДО-ТОСТ
+   ============================================================ */
+.toast{
+  position:fixed;left:50%;transform:translateX(-50%);
+  bottom: calc(var(--nav-height) + 16px + env(safe-area-inset-bottom));
+  background:var(--text);color:var(--bg);
+  padding:10px 14px;border-radius:10px;
+  font-size:14px;font-weight:500;
+  display:flex;align-items:center;gap:14px;
+  box-shadow: var(--shadow-lg);
+  z-index:200;
+  animation: toast-in 250ms ease;
+}
+.toast button{color:var(--accent);font-weight:700;font-size:14px}
+@media (min-width:1024px){.toast{bottom:24px}}
+@keyframes toast-in{from{opacity:0;transform:translate(-50%, 10px)}to{opacity:1;transform:translate(-50%,0)}}
+
+/* ============================================================
+   МОДАЛЬНОЕ ОКНО
+   ============================================================ */
+.modal-backdrop{
+  position:fixed;inset:0;background:rgba(0,0,0,.5);
+  display:none;align-items:center;justify-content:center;
+  z-index:300;padding:16px;
+  animation: fade 200ms ease;
+}
+.modal-backdrop.open{display:flex}
+.modal{
+  background:var(--surface);
+  border-radius: var(--radius-xl);
+  width:100%;max-width:520px;
+  max-height:90vh;overflow-y:auto;
+  padding:24px;
+  box-shadow: var(--shadow-lg);
+  animation: modal-in 250ms cubic-bezier(.2,.7,.3,1);
+}
+@keyframes modal-in{from{opacity:0;transform:translateY(20px) scale(.96)}to{opacity:1;transform:none}}
+.modal-head{display:flex;align-items:center;justify-content:space-between;margin-bottom:16px}
+.modal-head h2{font-size:20px}
+.modal-close{
+  width:36px;height:36px;border-radius:10px;display:grid;place-items:center;
+  color:var(--text-muted);transition: background var(--transition);
+}
+.modal-close:hover{background:var(--surface-2);color:var(--text)}
+.modal-actions{display:flex;gap:10px;justify-content:flex-end;margin-top:20px;flex-wrap:wrap}
+
+/* ============================================================
+   ВКЛАДКИ / ДНИ НЕДЕЛИ
+   ============================================================ */
+.tab-scroller{
+  display:flex;gap:8px;
+  overflow-x:auto;
+  padding-bottom:4px;margin-bottom:16px;
+  scrollbar-width:none;
+}
+.tab-scroller::-webkit-scrollbar{display:none}
+.pill{
+  padding:8px 16px;border-radius:999px;
+  background:var(--surface);border:1px solid var(--border);
+  font-size:14px;font-weight:600;color:var(--text-muted);
+  white-space:nowrap;flex-shrink:0;
+  transition: all var(--transition);
+}
+.pill:hover{border-color:var(--accent);color:var(--text)}
+.pill.active{background:var(--accent);border-color:var(--accent);color:#fff}
+.pill .pill-sub{font-size:11px;opacity:.8;display:block;font-weight:500}
+
+/* ============================================================
+   СТАТИСТИКА
+   ============================================================ */
+.stat-grid{
+  display:grid;gap:12px;
+  grid-template-columns: repeat(2, 1fr);
+  margin-bottom:16px;
+}
+@media (min-width:768px){.stat-grid{grid-template-columns: repeat(4, 1fr)}}
+.stat-card{
+  background:var(--surface);
+  border:1px solid var(--border);
+  border-radius: var(--radius-lg);
+  padding:16px;
+  box-shadow: var(--shadow-sm);
+}
+.stat-card .stat-label{color:var(--text-muted);font-size:12px;text-transform:uppercase;letter-spacing:.05em;font-weight:600;margin-bottom:6px}
+.stat-card .stat-value{font-size:28px;font-weight:800;line-height:1}
+.stat-card .stat-extra{font-size:12px;color:var(--text-muted);margin-top:4px}
+.stat-card.accent{background:linear-gradient(135deg,var(--accent),var(--accent-hover));color:#fff;border:none}
+.stat-card.accent .stat-label,.stat-card.accent .stat-extra{color:rgba(255,255,255,.85)}
+
+.heatmap{
+  display:grid;
+  grid-template-columns: repeat(15, 1fr);
+  gap:4px;
+  padding:4px 0;
+}
+@media (min-width:768px){.heatmap{grid-template-columns: repeat(30, 1fr)}}
+.heatmap-cell{
+  aspect-ratio:1;
+  border-radius:3px;
+  background:var(--surface-2);
+  transition: transform var(--transition);
+  cursor:help;
+}
+.heatmap-cell:hover{transform:scale(1.3)}
+.heatmap-cell.l1{background:#D6E9F7}
+.heatmap-cell.l2{background:#88C0E8}
+.heatmap-cell.l3{background:#4A9BE0}
+.heatmap-cell.l4{background:#2E75B6}
+[data-theme="dark"] .heatmap-cell.l1{background:#1F3248}
+[data-theme="dark"] .heatmap-cell.l2{background:#2C5A8A}
+[data-theme="dark"] .heatmap-cell.l3{background:#4A8BCC}
+[data-theme="dark"] .heatmap-cell.l4{background:#72B4EA}
+
+.chart-wrap{position:relative;height:260px}
+
+.top-miss-list{display:flex;flex-direction:column;gap:8px;margin-top:12px}
+.top-miss-item{
+  display:flex;align-items:center;justify-content:space-between;gap:12px;
+  padding:10px 12px;border-radius:10px;background:var(--surface-2);
+}
+.top-miss-item .miss-text{font-size:14px;min-width:0;flex:1}
+.top-miss-item .miss-count{
+  font-size:12px;font-weight:700;color:var(--danger);
+  background:var(--danger-soft);padding:3px 8px;border-radius:999px;flex-shrink:0;
+}
+
+/* ============================================================
+   МЕСЯЦ / КВАРТАЛ
+   ============================================================ */
+.countdown-banner{
+  background: linear-gradient(135deg, var(--accent-soft), transparent);
+  border:1px solid var(--border);
+  border-radius: var(--radius-lg);
+  padding:16px 20px;margin-bottom:16px;
+  display:flex;align-items:center;justify-content:space-between;gap:16px;
+}
+.countdown-banner .countdown-label{color:var(--text-muted);font-size:13px}
+.countdown-banner .countdown-value{font-size:22px;font-weight:800;color:var(--accent)}
+
+.month-item{
+  display:flex;align-items:flex-start;gap:12px;
+  padding:14px;border-radius:12px;
+  border:1px solid var(--border);
+  margin-bottom:10px;background:var(--surface);
+}
+.month-item .task-text{font-weight:500;margin-bottom:6px}
+.month-item-meta{
+  display:flex;gap:12px;flex-wrap:wrap;font-size:12px;color:var(--text-muted);
+}
+.month-item-meta input{
+  font-size:12px;padding:4px 8px;border-radius:6px;background:var(--surface-2);
+  border:1px solid var(--border);color:var(--text);
+}
+
+.quarter-grid{display:grid;gap:12px;grid-template-columns:1fr}
+@media (min-width:768px){.quarter-grid{grid-template-columns:repeat(2,1fr)}}
+@media (min-width:1280px){.quarter-grid{grid-template-columns:repeat(3,1fr)}}
+.quarter-card{
+  background:var(--surface);
+  border:1px solid var(--border);
+  border-radius: var(--radius-lg);
+  padding:18px;
+  display:flex;flex-direction:column;gap:10px;
+  min-height:140px;
+  transition: border-color var(--transition), transform var(--transition);
+}
+.quarter-card:hover{border-color:var(--accent)}
+.quarter-card.done{background:var(--success-soft);border-color:var(--success)}
+.quarter-card .qc-head{display:flex;align-items:center;justify-content:space-between;gap:8px}
+.quarter-card .qc-title{font-weight:700;font-size:15px}
+.quarter-card .qc-desc{font-size:13px;color:var(--text-muted);flex:1}
+
+/* ============================================================
+   КОНФЕТТИ
+   ============================================================ */
+.confetti{
+  position:fixed;inset:0;pointer-events:none;z-index:500;
+}
+.confetti span{
+  position:absolute;width:10px;height:14px;
+  animation: fall 1.8s ease-out forwards;
+}
+@keyframes fall{
+  0%{transform:translateY(-10vh) rotate(0);opacity:1}
+  100%{transform:translateY(100vh) rotate(720deg);opacity:0}
+}
+
+/* ============================================================
+   ONBOARDING
+   ============================================================ */
+.onboarding{
+  position:fixed;inset:0;background:var(--bg);z-index:400;
+  display:flex;flex-direction:column;padding:24px;
+  animation: fade 300ms ease;
+}
+.onboarding-slides{flex:1;display:flex;align-items:center;justify-content:center;text-align:center;padding:40px 20px}
+.onboarding-slide{max-width:420px}
+.onboarding-emoji{font-size:72px;margin-bottom:20px}
+.onboarding-slide h2{font-size:26px;margin-bottom:12px}
+.onboarding-slide p{color:var(--text-muted);font-size:16px;line-height:1.6}
+.onboarding-dots{display:flex;gap:8px;justify-content:center;margin-bottom:24px}
+.onboarding-dot{width:8px;height:8px;border-radius:50%;background:var(--border)}
+.onboarding-dot.active{background:var(--accent);width:24px;border-radius:4px;transition: all var(--transition)}
+.onboarding-actions{display:flex;gap:10px;justify-content:space-between}
+
+/* ============================================================
+   SETTINGS
+   ============================================================ */
+.setting-row{
+  display:flex;align-items:center;justify-content:space-between;gap:12px;
+  padding:14px 0;border-bottom:1px solid var(--border);
+}
+.setting-row:last-child{border-bottom:none}
+.setting-row .setting-label{font-weight:500}
+.setting-row .setting-desc{font-size:12px;color:var(--text-muted);margin-top:2px}
+.switch{
+  width:44px;height:26px;border-radius:13px;
+  background:var(--surface-2);position:relative;cursor:pointer;
+  transition: background var(--transition);flex-shrink:0;
+}
+.switch::after{
+  content:"";position:absolute;top:3px;left:3px;
+  width:20px;height:20px;border-radius:50%;background:#fff;
+  box-shadow: var(--shadow-sm);
+  transition: left var(--transition);
+}
+.switch.on{background:var(--accent)}
+.switch.on::after{left:21px}
+
+.threshold-slider{display:flex;align-items:center;gap:12px;margin-top:8px}
+.threshold-slider input{flex:1}
+.threshold-value{font-weight:700;color:var(--accent);min-width:44px;text-align:right}
+
+/* ============================================================
+   ПУСТОЕ СОСТОЯНИЕ
+   ============================================================ */
+.empty{
+  text-align:center;padding:40px 20px;color:var(--text-muted);
+}
+.empty .empty-emoji{font-size:40px;margin-bottom:10px}
+
+/* ============================================================
+   PAGE SECTIONS
+   ============================================================ */
+.page{display:none;animation: fade 250ms ease}
+.page.active{display:block}
+
+/* ============================================================
+   ПЕЧАТЬ
+   ============================================================ */
+@media print{
+  body{background:#fff;color:#000}
+  .topbar,.bottom-nav,.sidebar,.modal-backdrop,.toast,.confetti,
+  .note-btn,.checkbox,.onboarding{display:none !important}
+  .main{padding:0;max-width:none}
+  .card,.accordion,.top3,.hero,.quarter-card,.stat-card,.month-item{
+    border:1px solid #ccc;box-shadow:none;page-break-inside:avoid;
+  }
+  .accordion-body{display:block !important}
+  .page{display:block !important}
+  .task-text{font-size:14px}
+}
+
+/* ============================================================
+   UTIL
+   ============================================================ */
+.row{display:flex;gap:12px;flex-wrap:wrap;align-items:center}
+.spacer{flex:1}
+.muted{color:var(--text-muted)}
+.hidden{display:none !important}
+.center{display:grid;place-items:center}
+</style>
+</head>
+<body>
+<div class="wrapper">
+  <!-- ===================== SIDEBAR (DESKTOP) ===================== -->
+  <aside class="sidebar" aria-label="Главное меню">
+    <div class="brand">
+      <div class="brand-mark">C</div>
+      <div>CEO Daily Drill</div>
+    </div>
+    <nav id="sidebar-nav" role="navigation"></nav>
+    <div class="sidebar-footer">
+      <button id="btn-settings-side" aria-label="Настройки">
+        <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="3"/><path d="M19.4 15a1.65 1.65 0 0 0 .33 1.82l.06.06a2 2 0 0 1 0 2.83 2 2 0 0 1-2.83 0l-.06-.06a1.65 1.65 0 0 0-1.82-.33 1.65 1.65 0 0 0-1 1.51V21a2 2 0 0 1-4 0v-.09a1.65 1.65 0 0 0-1-1.51 1.65 1.65 0 0 0-1.82.33l-.06.06a2 2 0 0 1-2.83 0 2 2 0 0 1 0-2.83l.06-.06a1.65 1.65 0 0 0 .33-1.82 1.65 1.65 0 0 0-1.51-1H3a2 2 0 0 1 0-4h.09a1.65 1.65 0 0 0 1.51-1 1.65 1.65 0 0 0-.33-1.82l-.06-.06a2 2 0 0 1 0-2.83 2 2 0 0 1 2.83 0l.06.06a1.65 1.65 0 0 0 1.82.33H9a1.65 1.65 0 0 0 1-1.51V3a2 2 0 0 1 4 0v.09a1.65 1.65 0 0 0 1 1.51 1.65 1.65 0 0 0 1.82-.33l.06-.06a2 2 0 0 1 2.83 0 2 2 0 0 1 0 2.83l-.06.06a1.65 1.65 0 0 0-.33 1.82V9a1.65 1.65 0 0 0 1.51 1H21a2 2 0 0 1 0 4h-.09a1.65 1.65 0 0 0-1.51 1z"/></svg>
+        Настройки
+      </button>
+      <button id="btn-theme-side" aria-label="Переключить тему">
+        <svg id="theme-icon-side" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M21 12.79A9 9 0 1 1 11.21 3 7 7 0 0 0 21 12.79z"/></svg>
+        <span id="theme-label-side">Тёмная тема</span>
+      </button>
+    </div>
+  </aside>
+
+  <div class="app">
+    <!-- ===================== TOPBAR (MOBILE) ===================== -->
+    <header class="topbar">
+      <div class="brand">
+        <div class="brand-mark">C</div>
+        <div id="topbar-title">CEO Daily Drill</div>
+      </div>
+      <button class="icon-btn" id="btn-theme" aria-label="Переключить тему">
+        <svg id="theme-icon" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M21 12.79A9 9 0 1 1 11.21 3 7 7 0 0 0 21 12.79z"/></svg>
+      </button>
+      <button class="icon-btn" id="btn-settings" aria-label="Настройки">
+        <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="3"/><path d="M19.4 15a1.65 1.65 0 0 0 .33 1.82l.06.06a2 2 0 0 1 0 2.83 2 2 0 0 1-2.83 0l-.06-.06a1.65 1.65 0 0 0-1.82-.33 1.65 1.65 0 0 0-1 1.51V21a2 2 0 0 1-4 0v-.09a1.65 1.65 0 0 0-1-1.51 1.65 1.65 0 0 0-1.82.33l-.06.06a2 2 0 0 1-2.83 0 2 2 0 0 1 0-2.83l.06-.06a1.65 1.65 0 0 0 .33-1.82 1.65 1.65 0 0 0-1.51-1H3a2 2 0 0 1 0-4h.09a1.65 1.65 0 0 0 1.51-1 1.65 1.65 0 0 0-.33-1.82l-.06-.06a2 2 0 0 1 0-2.83 2 2 0 0 1 2.83 0l.06.06a1.65 1.65 0 0 0 1.82.33H9a1.65 1.65 0 0 0 1-1.51V3a2 2 0 0 1 4 0v.09a1.65 1.65 0 0 0 1 1.51 1.65 1.65 0 0 0 1.82-.33l.06-.06a2 2 0 0 1 2.83 0 2 2 0 0 1 0 2.83l-.06.06a1.65 1.65 0 0 0-.33 1.82V9a1.65 1.65 0 0 0 1.51 1H21a2 2 0 0 1 0 4h-.09a1.65 1.65 0 0 0-1.51 1z"/></svg>
+      </button>
+    </header>
+
+    <!-- ===================== MAIN CONTENT ===================== -->
+    <main class="main" id="main-content">
+
+      <!-- ========== PAGE: TODAY ========== -->
+      <section class="page active" id="page-today">
+        <div class="hero">
+          <div class="greeting">
+            <div class="date" id="today-date">—</div>
+            <div class="hello" id="today-hello">Добрый день!</div>
+            <div class="streak-chip" id="today-streak" title="Текущий стрик">
+              🔥 <span id="streak-num">0</span> <span>дней подряд</span>
+            </div>
+          </div>
+          <div class="ring" id="today-ring" style="--pct:0">
+            <svg width="84" height="84" viewBox="0 0 84 84">
+              <circle class="bg" cx="42" cy="42" r="36"/>
+              <circle class="fg" cx="42" cy="42" r="36" stroke-dasharray="226.19" stroke-dashoffset="226.19" id="ring-fg"/>
+            </svg>
+            <div class="label" id="ring-label">0%</div>
+          </div>
+        </div>
+
+        <!-- TOP-3 TASKS -->
+        <div class="top3">
+          <h3><span class="badge">TOP-3</span> Главные задачи дня</h3>
+          <div id="top3-list"></div>
+        </div>
+
+        <!-- ACCORDION BLOCKS -->
+        <div id="today-blocks"></div>
+
+        <div class="row" style="margin-top:20px;justify-content:space-between">
+          <button class="btn btn-ghost" id="btn-print">🖨 Распечатать</button>
+          <button class="btn btn-primary" id="btn-end-day">Завершить день →</button>
+        </div>
+      </section>
+
+      <!-- ========== PAGE: WEEK ========== -->
+      <section class="page" id="page-week">
+        <h1 style="margin-bottom:16px">Неделя</h1>
+        <div class="tab-scroller" id="weekday-tabs"></div>
+        <div id="weekday-content"></div>
+        <div style="margin-top:20px">
+          <button class="btn btn-primary" id="btn-week-summary">📊 Итоги недели</button>
+        </div>
+      </section>
+
+      <!-- ========== PAGE: MONTH ========== -->
+      <section class="page" id="page-month">
+        <h1 style="margin-bottom:16px">Месяц</h1>
+        <div class="countdown-banner">
+          <div>
+            <div class="countdown-label">До конца месяца</div>
+            <div class="countdown-value" id="month-countdown">—</div>
+          </div>
+          <div class="ring" id="month-ring" style="--pct:0;--size:64px">
+            <svg width="64" height="64" viewBox="0 0 64 64">
+              <circle class="bg" cx="32" cy="32" r="27" stroke-width="7" fill="none"/>
+              <circle class="fg" cx="32" cy="32" r="27" stroke-width="7" fill="none" stroke-linecap="round"
+                stroke-dasharray="169.65" stroke-dashoffset="169.65" id="month-ring-fg"/>
+            </svg>
+            <div class="label" id="month-ring-label" style="font-size:14px">0%</div>
+          </div>
+        </div>
+        <div id="month-list"></div>
+      </section>
+
+      <!-- ========== PAGE: QUARTER ========== -->
+      <section class="page" id="page-quarter">
+        <h1 style="margin-bottom:16px">Квартал</h1>
+        <div class="countdown-banner">
+          <div>
+            <div class="countdown-label" id="quarter-label">Квартал</div>
+            <div class="countdown-value" id="quarter-countdown">—</div>
+          </div>
+          <div class="ring" id="quarter-ring" style="--pct:0;--size:64px">
+            <svg width="64" height="64" viewBox="0 0 64 64">
+              <circle class="bg" cx="32" cy="32" r="27" stroke-width="7" fill="none"/>
+              <circle class="fg" cx="32" cy="32" r="27" stroke-width="7" fill="none" stroke-linecap="round"
+                stroke-dasharray="169.65" stroke-dashoffset="169.65" id="quarter-ring-fg"/>
+            </svg>
+            <div class="label" id="quarter-ring-label" style="font-size:14px">0%</div>
+          </div>
+        </div>
+        <div class="quarter-grid" id="quarter-grid"></div>
+      </section>
+
+      <!-- ========== PAGE: STATS ========== -->
+      <section class="page" id="page-stats">
+        <h1 style="margin-bottom:16px">Статистика</h1>
+        <div class="stat-grid">
+          <div class="stat-card accent">
+            <div class="stat-label">Текущий стрик</div>
+            <div class="stat-value" id="stat-streak">0</div>
+            <div class="stat-extra">дней подряд</div>
+          </div>
+          <div class="stat-card">
+            <div class="stat-label">Лучший</div>
+            <div class="stat-value" id="stat-longest">0</div>
+            <div class="stat-extra">дней</div>
+          </div>
+          <div class="stat-card">
+            <div class="stat-label">Среднее</div>
+            <div class="stat-value" id="stat-avg">0%</div>
+            <div class="stat-extra">выполнение</div>
+          </div>
+          <div class="stat-card">
+            <div class="stat-label">Всего дней</div>
+            <div class="stat-value" id="stat-total">0</div>
+            <div class="stat-extra">в истории</div>
+          </div>
+        </div>
+
+        <div class="card">
+          <h2>Тепловая карта — последние 90 дней</h2>
+          <div class="subtitle">Каждая клетка = один день. Чем ярче — тем выше процент выполнения.</div>
+          <div class="heatmap" id="heatmap"></div>
+        </div>
+
+        <div class="card">
+          <h2>Выполнение по неделям</h2>
+          <div class="subtitle">Средний процент по неделям (последние 12)</div>
+          <div class="chart-wrap"><canvas id="chart-weeks"></canvas></div>
+        </div>
+
+        <div class="card">
+          <h2>Пропуски по блокам</h2>
+          <div class="subtitle">Какие блоки вы чаще всего пропускаете</div>
+          <div class="chart-wrap"><canvas id="chart-blocks"></canvas></div>
+        </div>
+
+        <div class="card">
+          <h2>Топ-5 пропускаемых задач</h2>
+          <div class="subtitle">На чём чаще всего срывается контроль</div>
+          <div class="top-miss-list" id="top-miss"></div>
+        </div>
+
+        <div class="card">
+          <h2>Резервное копирование</h2>
+          <div class="subtitle">Храните данные в безопасности — экспортируйте их еженедельно</div>
+          <div class="row">
+            <button class="btn btn-secondary" id="btn-export">⬇ Экспорт JSON</button>
+            <button class="btn btn-secondary" id="btn-import">⬆ Импорт JSON</button>
+            <input type="file" id="import-file" accept="application/json" class="hidden"/>
+            <div class="spacer"></div>
+            <button class="btn btn-danger" id="btn-wipe">🗑 Очистить всё</button>
+          </div>
+        </div>
+      </section>
+
+    </main>
+
+    <!-- ===================== BOTTOM NAV (MOBILE) ===================== -->
+    <nav class="bottom-nav" role="navigation" aria-label="Основная навигация">
+      <button data-page="today" class="active" aria-label="Сегодня">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="4" width="18" height="18" rx="2"/><line x1="16" y1="2" x2="16" y2="6"/><line x1="8" y1="2" x2="8" y2="6"/><line x1="3" y1="10" x2="21" y2="10"/></svg>
+        <span>Сегодня</span>
+      </button>
+      <button data-page="week" aria-label="Неделя">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="4" width="18" height="18" rx="2"/><path d="M3 10h18"/><path d="M8 14h.01"/><path d="M12 14h.01"/><path d="M16 14h.01"/></svg>
+        <span>Неделя</span>
+      </button>
+      <button data-page="month" aria-label="Месяц">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="4" width="18" height="18" rx="2"/><path d="M7 2v4"/><path d="M17 2v4"/><path d="M3 10h18"/></svg>
+        <span>Месяц</span>
+      </button>
+      <button data-page="quarter" aria-label="Квартал">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M12 2v10l4 4"/><circle cx="12" cy="12" r="10"/></svg>
+        <span>Квартал</span>
+      </button>
+      <button data-page="stats" aria-label="Статистика">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><line x1="18" y1="20" x2="18" y2="10"/><line x1="12" y1="20" x2="12" y2="4"/><line x1="6" y1="20" x2="6" y2="14"/></svg>
+        <span>Статистика</span>
+      </button>
+    </nav>
+  </div>
+</div>
+
+<!-- ===================== MODALS ===================== -->
+<div class="modal-backdrop" id="modal-end-day">
+  <div class="modal">
+    <div class="modal-head">
+      <h2>Итоги дня</h2>
+      <button class="modal-close" data-close>✕</button>
+    </div>
+    <div id="end-day-body"></div>
+    <div class="modal-actions">
+      <button class="btn btn-ghost" data-close>Отмена</button>
+      <button class="btn btn-primary" id="btn-confirm-end-day">Завершить и перенести</button>
+    </div>
+  </div>
+</div>
+
+<div class="modal-backdrop" id="modal-settings">
+  <div class="modal">
+    <div class="modal-head">
+      <h2>Настройки</h2>
+      <button class="modal-close" data-close>✕</button>
+    </div>
+    <div>
+      <div class="setting-row">
+        <div>
+          <div class="setting-label">Имя</div>
+          <div class="setting-desc">Используется в приветствии</div>
+        </div>
+        <input class="input" id="setting-name" style="max-width:160px" placeholder="Например, Алексей"/>
+      </div>
+      <div class="setting-row">
+        <div>
+          <div class="setting-label">Тёмная тема</div>
+          <div class="setting-desc">Автоматически — по системе</div>
+        </div>
+        <div class="switch" id="setting-theme-switch"></div>
+      </div>
+      <div class="setting-row" style="flex-direction:column;align-items:stretch;gap:4px">
+        <div style="display:flex;justify-content:space-between;align-items:center">
+          <div>
+            <div class="setting-label">Порог «успешного дня»</div>
+            <div class="setting-desc">При каком % стрик продолжается</div>
+          </div>
+          <div class="threshold-value" id="threshold-value">80%</div>
+        </div>
+        <div class="threshold-slider">
+          <span class="muted" style="font-size:12px">50%</span>
+          <input type="range" id="setting-threshold" min="50" max="100" step="5" value="80" style="flex:1"/>
+          <span class="muted" style="font-size:12px">100%</span>
+        </div>
+      </div>
+      <div class="setting-row">
+        <div>
+          <div class="setting-label">Уведомления в браузере</div>
+          <div class="setting-desc">Утром, в обед и вечером</div>
+        </div>
+        <div class="switch" id="setting-notif-switch"></div>
+      </div>
+      <div class="setting-row">
+        <div>
+          <div class="setting-label">Автоперенос невыполненных задач</div>
+          <div class="setting-desc">TOP-3 переносятся на следующий день</div>
+        </div>
+        <div class="switch" id="setting-autocarry-switch"></div>
+      </div>
+      <div class="setting-row" style="flex-direction:column;align-items:stretch">
+        <div class="setting-label" style="margin-bottom:8px">Данные</div>
+        <div class="row">
+          <button class="btn btn-secondary btn-sm" id="btn-export-2">Экспорт</button>
+          <button class="btn btn-secondary btn-sm" id="btn-import-2">Импорт</button>
+          <div class="spacer"></div>
+          <button class="btn btn-danger" id="btn-wipe-2">Очистить всё</button>
+        </div>
+      </div>
+      <div class="setting-row">
+        <div>
+          <div class="setting-label">О приложении</div>
+          <div class="setting-desc">CEO Daily Drill v1.0 · Сделано с заботой о внимании</div>
+        </div>
+      </div>
+    </div>
+    <div class="modal-actions">
+      <button class="btn btn-primary" data-close>Готово</button>
+    </div>
+  </div>
+</div>
+
+<div class="modal-backdrop" id="modal-week-summary">
+  <div class="modal">
+    <div class="modal-head">
+      <h2>Итоги недели</h2>
+      <button class="modal-close" data-close>✕</button>
+    </div>
+    <div id="week-summary-body"></div>
+    <div class="modal-actions">
+      <button class="btn btn-primary" data-close>Закрыть</button>
+    </div>
+  </div>
+</div>
+
+<!-- ===================== ONBOARDING ===================== -->
+<div class="onboarding hidden" id="onboarding">
+  <div class="onboarding-slides">
+    <div class="onboarding-slide" id="onboarding-slide">
+      <div class="onboarding-emoji" id="ob-emoji">👋</div>
+      <h2 id="ob-title">Добро пожаловать!</h2>
+      <p id="ob-text">CEO Daily Drill — ваш персональный тренажёр управленческих привычек. Чек-лист, который реально превращается в ритуал.</p>
+    </div>
+  </div>
+  <div class="onboarding-dots" id="ob-dots"></div>
+  <div class="onboarding-actions">
+    <button class="btn btn-ghost" id="ob-skip">Пропустить</button>
+    <button class="btn btn-primary" id="ob-next">Дальше</button>
+  </div>
+</div>
+
+<script>
+/* ============================================================
+   ДАННЫЕ: ПУНКТЫ ЧЕК-ЛИСТОВ
+   ============================================================ */
+const CHECKLIST = {
+  morning: [
+    "Проверить остатки на счетах",
+    "Проверить ожидаемые поступления",
+    "Проверить срочные платежи",
+    "Посмотреть календарь на день",
+    "Проверить встречи, звонки и дедлайны",
+    "Проверить CRM",
+    "Проверить новые лиды",
+    "Проверить зависшие сделки",
+    "Проверить оплаты клиентов",
+    "Провести короткую планёрку",
+    "Определить 3 главные задачи дня"
+  ],
+  day: [
+    "Контролировать продажи",
+    "Контролировать ключевые сделки",
+    "Контролировать деньги компании",
+    "Проверять кассовые риски",
+    "Контролировать работу команды",
+    "Контролировать задачи бизнес-ассистента",
+    "Контролировать задачи коммерческого директора",
+    "Контролировать маркетинг",
+    "Контролировать клиентские проекты",
+    "Проводить ключевые встречи",
+    "Отвечать по стратегическим вопросам",
+    "Принимать решения по финансам",
+    "Контролировать договоры и оплаты"
+  ],
+  evening: [
+    "Подвести итоги дня",
+    "Проверить, что выполнено",
+    "Проверить, что не выполнено",
+    "Перенести незавершённые задачи",
+    "Подготовить план на завтра",
+    "Назначить 3 главные задачи на следующий день"
+  ]
+};
+
+const WEEKDAYS = [
+  { id: 1, name: "Понедельник", short: "Пн", items: [
+    "Провести планёрку недели",
+    "Проверить продажи",
+    "Проверить деньги",
+    "Проверить задачи команды",
+    "Определить приоритеты недели"
+  ]},
+  { id: 2, name: "Вторник", short: "Вт", items: [
+    "Проверить развитие компании",
+    "Проверить новые услуги",
+    "Проверить партнёрства",
+    "Проверить маркетинг"
+  ]},
+  { id: 3, name: "Среда", short: "Ср", items: [
+    "Провести встречи с клиентами",
+    "Провести встречи с партнёрами",
+    "Проверить ключевые сделки"
+  ]},
+  { id: 4, name: "Четверг", short: "Чт", items: [
+    "Проверить финансы",
+    "Проверить процессы",
+    "Проверить CRM",
+    "Проверить регламенты"
+  ]},
+  { id: 5, name: "Пятница", short: "Пт", items: [
+    "Подвести итоги недели",
+    "Проверить выполнение задач",
+    "Проверить продажи",
+    "Проверить маркетинг",
+    "Составить план на следующую неделю"
+  ]}
+];
+
+const MONTHLY = [
+  "Проверить KPI сотрудников",
+  "Проверить бюджет компании",
+  "Проверить доходы и расходы",
+  "Проверить обязательные документы",
+  "Проверить договоры и акты",
+  "Проверить кадровые документы",
+  "Проверить подрядчиков",
+  "Проверить сайт",
+  "Проверить кейсы и презентации",
+  "Проверить маркетинговые материалы"
+];
+
+const QUARTERLY = [
+  { title: "Стратегия компании", desc: "Сверить текущие действия с выбранным курсом на год" },
+  { title: "Цели компании", desc: "Пересмотреть, обновить, выставить новые приоритеты" },
+  { title: "Цены и продукты", desc: "Проверить актуальность прайса и линейки услуг" },
+  { title: "Партнёрства", desc: "Оценить действующие партнёрства, наметить новые" },
+  { title: "Организационная структура", desc: "Уточнить зоны ответственности и связки в команде" },
+  { title: "Необходимость найма", desc: "Где не хватает людей, где есть перегруз" },
+  { title: "Обновить услуги", desc: "Скорректировать описания и упаковку услуг" },
+  { title: "Обновить презентации", desc: "Привести материалы к актуальному виду" },
+  { title: "Обновить кейсы", desc: "Собрать новые успешные истории клиентов" }
+];
+
+const NAV_ITEMS = [
+  { id: "today",   label: "Сегодня",    icon: `<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="4" width="18" height="18" rx="2"/><line x1="16" y1="2" x2="16" y2="6"/><line x1="8" y1="2" x2="8" y2="6"/><line x1="3" y1="10" x2="21" y2="10"/></svg>` },
+  { id: "week",    label: "Неделя",     icon: `<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="4" width="18" height="18" rx="2"/><path d="M3 10h18"/><path d="M8 14h.01"/><path d="M12 14h.01"/><path d="M16 14h.01"/></svg>` },
+  { id: "month",   label: "Месяц",      icon: `<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="4" width="18" height="18" rx="2"/><path d="M7 2v4"/><path d="M17 2v4"/><path d="M3 10h18"/></svg>` },
+  { id: "quarter", label: "Квартал",    icon: `<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M12 2v10l4 4"/><circle cx="12" cy="12" r="10"/></svg>` },
+  { id: "stats",   label: "Статистика", icon: `<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><line x1="18" y1="20" x2="18" y2="10"/><line x1="12" y1="20" x2="12" y2="4"/><line x1="6" y1="20" x2="6" y2="14"/></svg>` }
+];
+
+/* ============================================================
+   ХРАНИЛИЩЕ
+   ============================================================ */
+const STORE_KEY = "ceoDailyDrill_v1";
+
+const defaultState = () => ({
+  settings: {
+    name: "",
+    theme: "system",    // system | light | dark
+    threshold: 80,
+    notifications: false,
+    autoCarry: true,
+    onboardingDone: false
+  },
+  history: {},      // YYYY-MM-DD -> dayRecord
+  currentDay: null, // { date, morning:{idx:bool}, day:{}, evening:{}, top3:[{text,done}], notes:{ "morning:3": "заметка" } }
+  weekly: {},       // YYYY-Www -> { comment, byDay:{1:[true...]} }
+  monthly: {},      // YYYY-MM -> { [idx]: { done:bool, note:string, lastChecked:date } }
+  quarterly: {},    // YYYY-Qn -> { [idx]: bool }
+  streak: { current: 0, longest: 0, lastCompletedDate: null }
+});
+
+function loadState(){
+  try{
+    const raw = localStorage.getItem(STORE_KEY);
+    if(!raw) return defaultState();
+    const parsed = JSON.parse(raw);
+    return deepMerge(defaultState(), parsed);
+  }catch(e){
+    console.error("Ошибка чтения state:", e);
+    return defaultState();
+  }
+}
+function saveState(){
+  try{ localStorage.setItem(STORE_KEY, JSON.stringify(state)); }
+  catch(e){ console.error("Ошибка записи state:", e); }
+}
+function deepMerge(base, over){
+  const out = Array.isArray(base) ? [...base] : {...base};
+  for(const k in over){
+    if(over[k] && typeof over[k] === "object" && !Array.isArray(over[k])){
+      out[k] = deepMerge(base[k] || {}, over[k]);
+    }else{
+      out[k] = over[k];
+    }
+  }
+  return out;
+}
+
+let state = loadState();
+
+/* ============================================================
+   УТИЛИТЫ
+   ============================================================ */
+const pad = n => String(n).padStart(2, "0");
+const todayKey = () => {
+  const d = new Date();
+  return `${d.getFullYear()}-${pad(d.getMonth()+1)}-${pad(d.getDate())}`;
+};
+const monthKey = () => {
+  const d = new Date();
+  return `${d.getFullYear()}-${pad(d.getMonth()+1)}`;
+};
+const quarterKey = () => {
+  const d = new Date();
+  const q = Math.floor(d.getMonth()/3) + 1;
+  return `${d.getFullYear()}-Q${q}`;
+};
+const weekKey = (d = new Date()) => {
+  const date = new Date(Date.UTC(d.getFullYear(), d.getMonth(), d.getDate()));
+  const dayNum = date.getUTCDay() || 7;
+  date.setUTCDate(date.getUTCDate() + 4 - dayNum);
+  const yearStart = new Date(Date.UTC(date.getUTCFullYear(),0,1));
+  const weekNo = Math.ceil((((date - yearStart) / 86400000) + 1)/7);
+  return `${date.getUTCFullYear()}-W${pad(weekNo)}`;
+};
+
+const fmtDateLong = (d = new Date()) => {
+  const days = ["Воскресенье","Понедельник","Вторник","Среда","Четверг","Пятница","Суббота"];
+  const months = ["января","февраля","марта","апреля","мая","июня","июля","августа","сентября","октября","ноября","декабря"];
+  return `${days[d.getDay()]}, ${d.getDate()} ${months[d.getMonth()]} ${d.getFullYear()}`;
+};
+
+const greetingFor = (d = new Date()) => {
+  const h = d.getHours();
+  if(h < 5) return "Доброй ночи";
+  if(h < 12) return "Доброе утро";
+  if(h < 18) return "Добрый день";
+  return "Добрый вечер";
+};
+
+const daysBetween = (a,b) => Math.round((b-a)/86400000);
+
+function daysLeftInMonth(){
+  const d = new Date();
+  const last = new Date(d.getFullYear(), d.getMonth()+1, 0).getDate();
+  return last - d.getDate();
+}
+function daysLeftInQuarter(){
+  const d = new Date();
+  const qMonth = Math.floor(d.getMonth()/3)*3 + 3;
+  const end = new Date(d.getFullYear(), qMonth, 0);
+  return daysBetween(d, end);
+}
+
+/* ============================================================
+   ДЕНЬ: СОЗДАНИЕ / ПЕРЕНОС
+   ============================================================ */
+function ensureCurrentDay(){
+  const today = todayKey();
+  if(!state.currentDay || state.currentDay.date !== today){
+    // Если есть незакрытый «вчерашний» день — автозакрыть
+    if(state.currentDay && state.currentDay.date !== today){
+      finalizeDayRecord(state.currentDay, false);
+    }
+    // Новый день
+    const prevTop3 = state.currentDay?.top3 || [];
+    const carryOver = state.settings.autoCarry
+      ? prevTop3.filter(t => t.text && !t.done).slice(0,3)
+      : [];
+    state.currentDay = {
+      date: today,
+      morning: {},
+      day: {},
+      evening: {},
+      top3: [
+        carryOver[0] ? {...carryOver[0], done:false} : {text:"", done:false},
+        carryOver[1] ? {...carryOver[1], done:false} : {text:"", done:false},
+        carryOver[2] ? {...carryOver[2], done:false} : {text:"", done:false}
+      ],
+      notes: {},
+      completedAt: null
+    };
+    saveState();
+  }
+}
+
+function dayPercent(d){
+  const total = CHECKLIST.morning.length + CHECKLIST.day.length + CHECKLIST.evening.length + 3;
+  let done = 0;
+  CHECKLIST.morning.forEach((_,i)=>{ if(d.morning[i]) done++; });
+  CHECKLIST.day.forEach((_,i)=>{ if(d.day[i]) done++; });
+  CHECKLIST.evening.forEach((_,i)=>{ if(d.evening[i]) done++; });
+  (d.top3||[]).forEach(t=>{ if(t.done) done++; });
+  return Math.round(done*100/total);
+}
+
+function blockPercent(d, block){
+  const list = CHECKLIST[block];
+  const done = list.filter((_,i)=>d[block][i]).length;
+  return list.length ? Math.round(done*100/list.length) : 0;
+}
+
+function finalizeDayRecord(dayRec, manual){
+  const pct = dayPercent(dayRec);
+  state.history[dayRec.date] = {
+    date: dayRec.date,
+    pct,
+    morning: {...dayRec.morning},
+    day: {...dayRec.day},
+    evening: {...dayRec.evening},
+    top3: dayRec.top3.map(t=>({...t})),
+    notes: {...dayRec.notes},
+    completedAt: manual ? new Date().toISOString() : null
+  };
+  // Стрик
+  const t = state.settings.threshold;
+  if(pct >= t){
+    const last = state.streak.lastCompletedDate;
+    if(last){
+      const gap = daysBetween(new Date(last), new Date(dayRec.date));
+      state.streak.current = gap === 1 ? state.streak.current + 1 : 1;
+    }else{
+      state.streak.current = 1;
+    }
+    state.streak.longest = Math.max(state.streak.longest, state.streak.current);
+    state.streak.lastCompletedDate = dayRec.date;
+  }else{
+    state.streak.current = 0;
+  }
+  saveState();
+}
+
+/* ============================================================
+   УНДО-ТОСТ
+   ============================================================ */
+let undoTimer = null;
+function showUndo(message, onUndo){
+  hideUndo();
+  const toast = document.createElement("div");
+  toast.className = "toast";
+  toast.innerHTML = `<span>${message}</span><button>Отменить</button>`;
+  toast.querySelector("button").addEventListener("click", ()=>{
+    onUndo();
+    hideUndo();
+    render();
+  });
+  toast.id = "undo-toast";
+  document.body.appendChild(toast);
+  undoTimer = setTimeout(hideUndo, 5000);
+}
+function hideUndo(){
+  clearTimeout(undoTimer);
+  document.getElementById("undo-toast")?.remove();
+}
+
+/* ============================================================
+   КОНФЕТТИ
+   ============================================================ */
+function confetti(){
+  const colors = ["#2E75B6","#2E7D32","#ED6C02","#C62828","#72B4EA"];
+  const box = document.createElement("div");
+  box.className = "confetti";
+  for(let i=0;i<40;i++){
+    const s = document.createElement("span");
+    s.style.left = Math.random()*100 + "vw";
+    s.style.background = colors[i%colors.length];
+    s.style.animationDelay = (Math.random()*.3) + "s";
+    s.style.transform = `rotate(${Math.random()*360}deg)`;
+    box.appendChild(s);
+  }
+  document.body.appendChild(box);
+  setTimeout(()=>box.remove(), 2200);
+}
+
+/* ============================================================
+   РЕНДЕР: ГЛАВНЫЙ ЭКРАН
+   ============================================================ */
+function renderToday(){
+  const d = state.currentDay;
+  document.getElementById("today-date").textContent = fmtDateLong();
+  const name = state.settings.name ? `, ${state.settings.name}` : "";
+  document.getElementById("today-hello").textContent = `${greetingFor()}${name}!`;
+  document.getElementById("streak-num").textContent = state.streak.current;
+
+  // Ring
+  const pct = dayPercent(d);
+  const circ = 2 * Math.PI * 36;
+  document.getElementById("ring-fg").setAttribute("stroke-dashoffset", circ - (pct/100)*circ);
+  document.getElementById("ring-label").textContent = pct + "%";
+
+  // TOP3
+  const top3El = document.getElementById("top3-list");
+  top3El.innerHTML = "";
+  d.top3.forEach((t, idx) => {
+    const row = document.createElement("div");
+    row.className = "task-row" + (t.done ? " done" : "");
+    row.innerHTML = `
+      <div class="task-num">${idx+1}</div>
+      <input type="text" class="task-input" placeholder="Задача №${idx+1}" value="${escapeHTML(t.text)}"/>
+      <div class="checkbox" role="checkbox" aria-checked="${t.done}" aria-label="Отметить выполнение" tabindex="0">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3" stroke-linecap="round" stroke-linejoin="round"><polyline points="20 6 9 17 4 12"/></svg>
+      </div>
+    `;
+    const inp = row.querySelector("input");
+    inp.addEventListener("input", (e) => {
+      d.top3[idx].text = e.target.value;
+      saveState();
+    });
+    const cb = row.querySelector(".checkbox");
+    cb.classList.toggle("done-inner", t.done);
+    if(t.done) cb.parentElement.classList.add("done");
+    cb.addEventListener("click", () => {
+      const was = d.top3[idx].done;
+      d.top3[idx].done = !was;
+      saveState();
+      vibrate(15);
+      renderToday();
+      updateDayProgressOnBlocks();
+    });
+    cb.addEventListener("keydown", e => { if(e.key==="Enter"||e.key===" "){ e.preventDefault(); cb.click(); }});
+    // стили чекбокса для top3: приведём к общему
+    cb.style.cssText = `width:26px;height:26px;border-radius:8px;border:2px solid ${t.done ? "var(--success)" : "var(--border)"};background:${t.done ? "var(--success)" : "var(--surface)"};display:grid;place-items:center;flex-shrink:0`;
+    const svg = cb.querySelector("svg");
+    svg.style.cssText = `width:16px;height:16px;color:#fff;opacity:${t.done ? 1 : 0}`;
+    top3El.appendChild(row);
+  });
+
+  // Blocks
+  renderBlocks();
+
+  // End-day button visibility
+  const hrNow = new Date().getHours();
+  document.getElementById("btn-end-day").style.display = hrNow >= 18 ? "" : "none";
+}
+
+function renderBlocks(){
+  const host = document.getElementById("today-blocks");
+  const d = state.currentDay;
+  const h = new Date().getHours();
+  const blocks = [
+    { key:"morning", title:"Утро", emoji:"🌅", defaultOpen: h < 12 },
+    { key:"day",     title:"В течение дня", emoji:"☀️", defaultOpen: h >= 12 && h < 18 },
+    { key:"evening", title:"Вечер", emoji:"🌙", defaultOpen: h >= 18 }
+  ];
+  host.innerHTML = "";
+  blocks.forEach(b => {
+    const pct = blockPercent(d, b.key);
+    const openKey = `open_${b.key}`;
+    const isOpen = (state.currentDay._ui?.[openKey]) ?? b.defaultOpen;
+    const wrap = document.createElement("div");
+    wrap.className = "accordion" + (isOpen ? " open" : "");
+    wrap.innerHTML = `
+      <button class="accordion-head" aria-expanded="${isOpen}">
+        <div class="accordion-title">
+          <div class="accordion-emoji">${b.emoji}</div>
+          <div class="accordion-text">
+            <h3>${b.title}</h3>
+            <div class="meta">${CHECKLIST[b.key].filter((_,i)=>d[b.key][i]).length} / ${CHECKLIST[b.key].length} выполнено</div>
+          </div>
+        </div>
+        <div class="accordion-progress">
+          <div class="progress-bar"><div class="progress-bar-fill" style="width:${pct}%"></div></div>
+          <svg class="accordion-chevron" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polyline points="6 9 12 15 18 9"/></svg>
+        </div>
+      </button>
+      <div class="accordion-body"></div>
+    `;
+    const body = wrap.querySelector(".accordion-body");
+    CHECKLIST[b.key].forEach((text, idx) => {
+      const done = !!d[b.key][idx];
+      const noteKey = `${b.key}:${idx}`;
+      const note = d.notes[noteKey] || "";
+      const hasNote = note.trim().length > 0;
+      const task = document.createElement("div");
+      task.className = "task" + (done ? " done" : "") + (hasNote ? " note-open" : "");
+      task.innerHTML = `
+        <div class="checkbox" role="checkbox" aria-checked="${done}" tabindex="0" aria-label="Отметить: ${escapeHTML(text)}">
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3" stroke-linecap="round" stroke-linejoin="round"><polyline points="20 6 9 17 4 12"/></svg>
+        </div>
+        <div class="task-body">
+          <div class="task-text">${escapeHTML(text)}</div>
+          <div class="note-wrap">
+            <textarea class="textarea" placeholder="Комментарий (например, цифры или детали)">${escapeHTML(note)}</textarea>
+          </div>
+        </div>
+        <button class="note-btn${hasNote ? " has-note" : ""}" aria-label="Заметка" title="Добавить заметку">
+          <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/><polyline points="14 2 14 8 20 8"/><line x1="9" y1="13" x2="15" y2="13"/><line x1="9" y1="17" x2="13" y2="17"/></svg>
+        </button>
+      `;
+      const cb = task.querySelector(".checkbox");
+      cb.addEventListener("click", () => {
+        const prev = !!d[b.key][idx];
+        d[b.key][idx] = !prev;
+        saveState();
+        vibrate(15);
+        renderToday();
+        if(dayPercent(d) === 100) confetti();
+        showUndo(prev ? "Задача снова активна" : "Задача отмечена", () => {
+          d[b.key][idx] = prev;
+          saveState();
+        });
+      });
+      cb.addEventListener("keydown", e => { if(e.key==="Enter"||e.key===" "){ e.preventDefault(); cb.click(); }});
+      task.querySelector(".note-btn").addEventListener("click", () => {
+        task.classList.toggle("note-open");
+      });
+      task.querySelector("textarea").addEventListener("input", e => {
+        d.notes[noteKey] = e.target.value;
+        task.querySelector(".note-btn").classList.toggle("has-note", e.target.value.trim().length > 0);
+        saveState();
+      });
+      body.appendChild(task);
+    });
+    wrap.querySelector(".accordion-head").addEventListener("click", () => {
+      wrap.classList.toggle("open");
+      d._ui = d._ui || {};
+      d._ui[openKey] = wrap.classList.contains("open");
+      saveState();
+    });
+    host.appendChild(wrap);
+  });
+}
+
+function updateDayProgressOnBlocks(){
+  // лёгкая перерисовка прогресса блоков, если меняются top3/пр.
+  renderToday();
+}
+
+/* ============================================================
+   НЕДЕЛЯ
+   ============================================================ */
+let selectedWeekday = null;
+
+function renderWeek(){
+  const tabsHost = document.getElementById("weekday-tabs");
+  tabsHost.innerHTML = "";
+  const today = new Date().getDay();
+  const isoToday = today === 0 ? 7 : today;
+  if(selectedWeekday === null) selectedWeekday = Math.min(Math.max(isoToday, 1), 5);
+
+  WEEKDAYS.forEach(wd => {
+    const b = document.createElement("button");
+    b.className = "pill" + (selectedWeekday === wd.id ? " active" : "");
+    b.innerHTML = `${wd.name}${isoToday===wd.id ? `<span class="pill-sub">сегодня</span>` : ""}`;
+    b.addEventListener("click", () => { selectedWeekday = wd.id; renderWeek(); });
+    tabsHost.appendChild(b);
+  });
+
+  const wk = weekKey();
+  state.weekly[wk] = state.weekly[wk] || { byDay: {}, comment: "" };
+  state.weekly[wk].byDay[selectedWeekday] = state.weekly[wk].byDay[selectedWeekday] || {};
+
+  const wd = WEEKDAYS.find(w => w.id === selectedWeekday);
+  const host = document.getElementById("weekday-content");
+  host.innerHTML = "";
+  const card = document.createElement("div");
+  card.className = "card";
+  card.innerHTML = `<h2>${wd.name}</h2><div class="subtitle">Недельный фокус на этот день</div>`;
+  wd.items.forEach((text, idx) => {
+    const done = !!state.weekly[wk].byDay[selectedWeekday][idx];
+    const task = document.createElement("div");
+    task.className = "task" + (done ? " done" : "");
+    task.innerHTML = `
+      <div class="checkbox" role="checkbox" aria-checked="${done}" tabindex="0">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3" stroke-linecap="round" stroke-linejoin="round"><polyline points="20 6 9 17 4 12"/></svg>
+      </div>
+      <div class="task-body"><div class="task-text">${escapeHTML(text)}</div></div>
+    `;
+    task.querySelector(".checkbox").addEventListener("click", () => {
+      state.weekly[wk].byDay[selectedWeekday][idx] = !done;
+      saveState();
+      vibrate(15);
+      renderWeek();
+    });
+    card.appendChild(task);
+  });
+  host.appendChild(card);
+}
+
+function openWeekSummary(){
+  const wk = weekKey();
+  const data = state.weekly[wk] || { byDay:{}, comment:"" };
+  const body = document.getElementById("week-summary-body");
+  const rows = WEEKDAYS.map(wd => {
+    const d = data.byDay[wd.id] || {};
+    const done = wd.items.filter((_,i)=>d[i]).length;
+    const pct = wd.items.length ? Math.round(done*100/wd.items.length) : 0;
+    return `
+      <div style="margin-bottom:12px">
+        <div style="display:flex;justify-content:space-between;font-size:14px;margin-bottom:4px">
+          <span>${wd.name}</span><span class="muted">${done}/${wd.items.length} · ${pct}%</span>
+        </div>
+        <div class="progress-bar" style="width:100%;height:8px"><div class="progress-bar-fill" style="width:${pct}%"></div></div>
+      </div>`;
+  }).join("");
+  body.innerHTML = `
+    ${rows}
+    <div style="margin-top:16px">
+      <label class="setting-label">Выводы недели</label>
+      <textarea class="textarea" id="week-comment" placeholder="Что получилось, что нет, идеи на следующую неделю...">${escapeHTML(data.comment)}</textarea>
+    </div>
+  `;
+  document.getElementById("week-comment").addEventListener("input", e => {
+    state.weekly[wk] = state.weekly[wk] || { byDay:{}, comment:"" };
+    state.weekly[wk].comment = e.target.value;
+    saveState();
+  });
+  openModal("modal-week-summary");
+}
+
+/* ============================================================
+   МЕСЯЦ
+   ============================================================ */
+function renderMonth(){
+  const mk = monthKey();
+  state.monthly[mk] = state.monthly[mk] || {};
+  const host = document.getElementById("month-list");
+  host.innerHTML = "";
+  MONTHLY.forEach((text, idx) => {
+    state.monthly[mk][idx] = state.monthly[mk][idx] || { done:false, note:"", lastChecked:"" };
+    const item = state.monthly[mk][idx];
+    const el = document.createElement("div");
+    el.className = "month-item";
+    el.innerHTML = `
+      <div class="checkbox" role="checkbox" aria-checked="${item.done}" tabindex="0" style="flex-shrink:0;width:26px;height:26px;border-radius:8px;border:2px solid ${item.done?'var(--success)':'var(--border)'};background:${item.done?'var(--success)':'var(--surface)'};display:grid;place-items:center;margin-top:2px">
+        <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="#fff" stroke-width="3" stroke-linecap="round" stroke-linejoin="round" style="opacity:${item.done?1:0}"><polyline points="20 6 9 17 4 12"/></svg>
+      </div>
+      <div style="flex:1">
+        <div class="task-text"${item.done?' style="text-decoration:line-through;color:var(--text-muted)"':''}>${escapeHTML(text)}</div>
+        <div class="month-item-meta">
+          <label>Проверено: <input type="date" value="${item.lastChecked||''}"/></label>
+          <textarea class="textarea" style="min-height:44px;margin-top:6px" placeholder="Комментарий">${escapeHTML(item.note)}</textarea>
+        </div>
+      </div>
+    `;
+    el.querySelector(".checkbox").addEventListener("click", () => {
+      item.done = !item.done;
+      if(item.done) item.lastChecked = todayKey();
+      saveState();
+      vibrate(15);
+      renderMonth();
+    });
+    el.querySelector('input[type="date"]').addEventListener("change", e => { item.lastChecked = e.target.value; saveState(); });
+    el.querySelector("textarea").addEventListener("input", e => { item.note = e.target.value; saveState(); });
+    host.appendChild(el);
+  });
+
+  document.getElementById("month-countdown").textContent = `${daysLeftInMonth()} дней`;
+  const doneCount = MONTHLY.filter((_,i)=>state.monthly[mk][i]?.done).length;
+  const pct = Math.round(doneCount*100/MONTHLY.length);
+  const circ = 2*Math.PI*27;
+  document.getElementById("month-ring-fg").setAttribute("stroke-dashoffset", circ - (pct/100)*circ);
+  document.getElementById("month-ring-label").textContent = pct + "%";
+}
+
+/* ============================================================
+   КВАРТАЛ
+   ============================================================ */
+function renderQuarter(){
+  const qk = quarterKey();
+  state.quarterly[qk] = state.quarterly[qk] || {};
+  const grid = document.getElementById("quarter-grid");
+  grid.innerHTML = "";
+  QUARTERLY.forEach((item, idx) => {
+    const done = !!state.quarterly[qk][idx];
+    const card = document.createElement("div");
+    card.className = "quarter-card" + (done ? " done" : "");
+    card.innerHTML = `
+      <div class="qc-head">
+        <div class="qc-title">${escapeHTML(item.title)}</div>
+        <div class="checkbox" role="checkbox" aria-checked="${done}" tabindex="0" style="width:26px;height:26px;border-radius:8px;border:2px solid ${done?'var(--success)':'var(--border)'};background:${done?'var(--success)':'var(--surface)'};display:grid;place-items:center;flex-shrink:0">
+          <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="#fff" stroke-width="3" stroke-linecap="round" stroke-linejoin="round" style="opacity:${done?1:0}"><polyline points="20 6 9 17 4 12"/></svg>
+        </div>
+      </div>
+      <div class="qc-desc">${escapeHTML(item.desc)}</div>
+    `;
+    card.querySelector(".checkbox").addEventListener("click", () => {
+      state.quarterly[qk][idx] = !done;
+      saveState();
+      vibrate(15);
+      renderQuarter();
+    });
+    grid.appendChild(card);
+  });
+  document.getElementById("quarter-label").textContent = `Квартал ${qk.split("-")[1]} ${qk.split("-")[0]}`;
+  document.getElementById("quarter-countdown").textContent = `${daysLeftInQuarter()} дней`;
+  const doneCount = QUARTERLY.filter((_,i)=>state.quarterly[qk][i]).length;
+  const pct = Math.round(doneCount*100/QUARTERLY.length);
+  const circ = 2*Math.PI*27;
+  document.getElementById("quarter-ring-fg").setAttribute("stroke-dashoffset", circ - (pct/100)*circ);
+  document.getElementById("quarter-ring-label").textContent = pct + "%";
+}
+
+/* ============================================================
+   СТАТИСТИКА
+   ============================================================ */
+let chartWeeks = null, chartBlocks = null;
+function renderStats(){
+  document.getElementById("stat-streak").textContent = state.streak.current;
+  document.getElementById("stat-longest").textContent = state.streak.longest;
+  const hist = Object.values(state.history);
+  const avg = hist.length ? Math.round(hist.reduce((a,b)=>a+b.pct,0)/hist.length) : 0;
+  document.getElementById("stat-avg").textContent = avg + "%";
+  document.getElementById("stat-total").textContent = hist.length;
+
+  // Heatmap — 90 дней
+  const hm = document.getElementById("heatmap");
+  hm.innerHTML = "";
+  const today = new Date();
+  for(let i = 89; i >= 0; i--){
+    const d = new Date(today);
+    d.setDate(today.getDate() - i);
+    const key = `${d.getFullYear()}-${pad(d.getMonth()+1)}-${pad(d.getDate())}`;
+    const rec = state.history[key];
+    let cls = "";
+    if(rec){
+      if(rec.pct >= 80) cls = "l4";
+      else if(rec.pct >= 60) cls = "l3";
+      else if(rec.pct >= 30) cls = "l2";
+      else if(rec.pct > 0)   cls = "l1";
+    }
+    const cell = document.createElement("div");
+    cell.className = "heatmap-cell " + cls;
+    cell.title = `${fmtDateLong(d)}${rec?` · ${rec.pct}%`:" · нет данных"}`;
+    hm.appendChild(cell);
+  }
+
+  // Графики Chart.js
+  if(typeof Chart !== "undefined"){
+    renderWeekChart();
+    renderBlockChart();
+  }
+
+  // Топ-5 пропусков
+  const miss = {};
+  Object.values(state.history).forEach(rec => {
+    ["morning","day","evening"].forEach(block => {
+      CHECKLIST[block].forEach((text, idx) => {
+        if(!rec[block]?.[idx]){
+          miss[text] = (miss[text]||0) + 1;
+        }
+      });
+    });
+  });
+  const top = Object.entries(miss).sort((a,b)=>b[1]-a[1]).slice(0,5);
+  const topHost = document.getElementById("top-miss");
+  topHost.innerHTML = top.length
+    ? top.map(([txt,cnt]) => `<div class="top-miss-item"><div class="miss-text">${escapeHTML(txt)}</div><div class="miss-count">${cnt}×</div></div>`).join("")
+    : `<div class="empty"><div class="empty-emoji">✨</div>Пока нет данных — начните отмечать задачи</div>`;
+}
+
+function renderWeekChart(){
+  const ctx = document.getElementById("chart-weeks");
+  if(!ctx) return;
+  // 12 недель назад
+  const weeks = {};
+  const now = new Date();
+  for(let i = 11; i >= 0; i--){
+    const d = new Date(now);
+    d.setDate(d.getDate() - i*7);
+    const wk = weekKey(d);
+    weeks[wk] = { total: 0, sum: 0 };
+  }
+  Object.values(state.history).forEach(rec => {
+    const wk = weekKey(new Date(rec.date));
+    if(weeks[wk]){ weeks[wk].total++; weeks[wk].sum += rec.pct; }
+  });
+  const labels = Object.keys(weeks).map(w => w.split("-W")[1]);
+  const values = Object.values(weeks).map(w => w.total ? Math.round(w.sum/w.total) : 0);
+
+  if(chartWeeks) chartWeeks.destroy();
+  const textColor = getComputedStyle(document.body).getPropertyValue("--text-muted").trim();
+  const accent = getComputedStyle(document.body).getPropertyValue("--accent").trim();
+  chartWeeks = new Chart(ctx, {
+    type: "line",
+    data: {
+      labels,
+      datasets: [{
+        label: "%",
+        data: values,
+        borderColor: accent,
+        backgroundColor: accent + "22",
+        fill: true,
+        tension: .35,
+        pointRadius: 4,
+        pointBackgroundColor: accent
+      }]
+    },
+    options: {
+      responsive: true,
+      maintainAspectRatio: false,
+      plugins: { legend: { display:false }, tooltip: { callbacks: { label: ctx => ctx.parsed.y + "%" } } },
+      scales: {
+        y: { beginAtZero:true, max:100, ticks: { color: textColor, callback: v => v + "%" }, grid: { color: textColor + "22" } },
+        x: { ticks: { color: textColor }, grid: { display:false } }
+      }
+    }
+  });
+}
+
+function renderBlockChart(){
+  const ctx = document.getElementById("chart-blocks");
+  if(!ctx) return;
+  const miss = { "Утро":0, "В течение дня":0, "Вечер":0 };
+  Object.values(state.history).forEach(rec => {
+    CHECKLIST.morning.forEach((_,i)=>{ if(!rec.morning?.[i]) miss["Утро"]++; });
+    CHECKLIST.day.forEach((_,i)=>{ if(!rec.day?.[i]) miss["В течение дня"]++; });
+    CHECKLIST.evening.forEach((_,i)=>{ if(!rec.evening?.[i]) miss["Вечер"]++; });
+  });
+  const textColor = getComputedStyle(document.body).getPropertyValue("--text-muted").trim();
+  const danger = getComputedStyle(document.body).getPropertyValue("--danger").trim();
+
+  if(chartBlocks) chartBlocks.destroy();
+  chartBlocks = new Chart(ctx, {
+    type: "bar",
+    data: {
+      labels: Object.keys(miss),
+      datasets: [{
+        label: "Пропущено",
+        data: Object.values(miss),
+        backgroundColor: [danger + "AA", danger + "88", danger + "66"],
+        borderRadius: 10,
+        borderSkipped: false
+      }]
+    },
+    options: {
+      responsive: true, maintainAspectRatio: false,
+      plugins: { legend: { display:false } },
+      scales: {
+        y: { beginAtZero:true, ticks: { color: textColor }, grid: { color: textColor + "22" } },
+        x: { ticks: { color: textColor }, grid: { display:false } }
+      }
+    }
+  });
+}
+
+/* ============================================================
+   НАВИГАЦИЯ
+   ============================================================ */
+let currentPage = "today";
+function navigate(page){
+  currentPage = page;
+  document.querySelectorAll(".page").forEach(p => p.classList.toggle("active", p.id === "page-" + page));
+  document.querySelectorAll(".bottom-nav button").forEach(b => b.classList.toggle("active", b.dataset.page === page));
+  document.querySelectorAll("#sidebar-nav button").forEach(b => b.classList.toggle("active", b.dataset.page === page));
+  document.getElementById("topbar-title").textContent = NAV_ITEMS.find(n => n.id === page)?.label || "CEO Daily Drill";
+  window.scrollTo({top:0, behavior:"instant"});
+  render();
+}
+
+function buildSidebar(){
+  const host = document.getElementById("sidebar-nav");
+  host.innerHTML = "";
+  NAV_ITEMS.forEach(it => {
+    const b = document.createElement("button");
+    b.dataset.page = it.id;
+    b.innerHTML = it.icon + "<span>" + it.label + "</span>";
+    if(it.id === currentPage) b.classList.add("active");
+    b.addEventListener("click", () => navigate(it.id));
+    host.appendChild(b);
+  });
+}
+
+/* ============================================================
+   МОДАЛКИ
+   ============================================================ */
+function openModal(id){
+  document.getElementById(id).classList.add("open");
+  document.body.style.overflow = "hidden";
+}
+function closeModal(el){
+  (typeof el === "string" ? document.getElementById(el) : el).classList.remove("open");
+  document.body.style.overflow = "";
+}
+document.querySelectorAll(".modal-backdrop").forEach(m => {
+  m.addEventListener("click", e => { if(e.target === m) closeModal(m); });
+});
+document.querySelectorAll("[data-close]").forEach(b => {
+  b.addEventListener("click", () => closeModal(b.closest(".modal-backdrop")));
+});
+
+/* ============================================================
+   ЗАВЕРШИТЬ ДЕНЬ
+   ============================================================ */
+function openEndDay(){
+  const d = state.currentDay;
+  const pct = dayPercent(d);
+  const morningDone = CHECKLIST.morning.filter((_,i)=>d.morning[i]).length;
+  const dayDone = CHECKLIST.day.filter((_,i)=>d.day[i]).length;
+  const eveningDone = CHECKLIST.evening.filter((_,i)=>d.evening[i]).length;
+  const top3Done = d.top3.filter(t => t.done).length;
+  const incomplete = [
+    ...d.top3.filter(t=>t.text && !t.done).map(t=>t.text)
+  ];
+  document.getElementById("end-day-body").innerHTML = `
+    <div style="text-align:center;margin-bottom:20px">
+      <div style="font-size:48px;font-weight:800;color:var(--accent);line-height:1">${pct}%</div>
+      <div class="muted" style="margin-top:4px">выполнение дня</div>
+    </div>
+    <div style="display:grid;grid-template-columns:repeat(3,1fr);gap:8px;margin-bottom:16px">
+      <div class="stat-card"><div class="stat-label">🌅 Утро</div><div class="stat-value" style="font-size:20px">${morningDone}/${CHECKLIST.morning.length}</div></div>
+      <div class="stat-card"><div class="stat-label">☀️ День</div><div class="stat-value" style="font-size:20px">${dayDone}/${CHECKLIST.day.length}</div></div>
+      <div class="stat-card"><div class="stat-label">🌙 Вечер</div><div class="stat-value" style="font-size:20px">${eveningDone}/${CHECKLIST.evening.length}</div></div>
+    </div>
+    <div class="stat-card" style="margin-bottom:16px">
+      <div class="stat-label">TOP-3</div>
+      <div class="stat-value" style="font-size:20px">${top3Done} из ${d.top3.filter(t=>t.text).length||3}</div>
+    </div>
+    ${incomplete.length ? `
+      <div class="card" style="background:var(--warning-soft);border-color:var(--warning);margin-bottom:0">
+        <h3 style="font-size:15px;margin-bottom:8px;color:var(--warning)">↻ Будут перенесены на завтра:</h3>
+        <ul style="padding-left:20px;margin:0">${incomplete.map(t=>`<li>${escapeHTML(t)}</li>`).join("")}</ul>
+      </div>` : `
+      <div class="card" style="background:var(--success-soft);border-color:var(--success);margin-bottom:0;text-align:center">
+        <div style="font-size:24px">✨</div>
+        <div style="font-weight:600;color:var(--success);margin-top:4px">Чисто — всё закрыто</div>
+      </div>`}
+    ${pct >= state.settings.threshold ? `
+      <div style="text-align:center;margin-top:16px;padding:12px;background:var(--accent-soft);border-radius:10px">
+        <div style="font-weight:700;color:var(--accent)">🔥 Стрик будет продолжен: ${state.streak.current + 1} дней</div>
+      </div>` : ""}
+  `;
+  openModal("modal-end-day");
+}
+
+function confirmEndDay(){
+  finalizeDayRecord(state.currentDay, true);
+  // Перенесём TOP-3
+  const unfinished = state.currentDay.top3.filter(t=>t.text && !t.done).slice(0,3);
+  // Начнём новый день (но не меняем дату — дата сменится сама при следующем тике)
+  // Просто очистим текущую и пометим завершённой
+  const done = dayPercent(state.currentDay) >= state.settings.threshold;
+  state.currentDay.completedAt = new Date().toISOString();
+  saveState();
+  closeModal("modal-end-day");
+  if(done) confetti();
+  render();
+}
+
+/* ============================================================
+   ТЕМА
+   ============================================================ */
+function applyTheme(){
+  const t = state.settings.theme;
+  if(t === "system"){
+    document.documentElement.removeAttribute("data-theme");
+    const prefersDark = window.matchMedia("(prefers-color-scheme: dark)").matches;
+    if(prefersDark) document.documentElement.setAttribute("data-theme","dark");
+  }else{
+    document.documentElement.setAttribute("data-theme", t);
+  }
+  // перерисуем графики для новых цветов
+  if(currentPage === "stats") setTimeout(renderStats, 50);
+}
+function toggleTheme(){
+  const cur = document.documentElement.getAttribute("data-theme");
+  state.settings.theme = cur === "dark" ? "light" : "dark";
+  saveState();
+  applyTheme();
+}
+window.matchMedia("(prefers-color-scheme: dark)").addEventListener("change", () => {
+  if(state.settings.theme === "system") applyTheme();
+});
+
+/* ============================================================
+   НАСТРОЙКИ
+   ============================================================ */
+function openSettings(){
+  document.getElementById("setting-name").value = state.settings.name;
+  document.getElementById("threshold-value").textContent = state.settings.threshold + "%";
+  document.getElementById("setting-threshold").value = state.settings.threshold;
+  document.getElementById("setting-theme-switch").classList.toggle("on",
+    (document.documentElement.getAttribute("data-theme") === "dark"));
+  document.getElementById("setting-notif-switch").classList.toggle("on", state.settings.notifications);
+  document.getElementById("setting-autocarry-switch").classList.toggle("on", state.settings.autoCarry);
+  openModal("modal-settings");
+}
+
+document.getElementById("setting-name").addEventListener("input", e => {
+  state.settings.name = e.target.value.trim();
+  saveState();
+  renderToday();
+});
+document.getElementById("setting-threshold").addEventListener("input", e => {
+  state.settings.threshold = +e.target.value;
+  document.getElementById("threshold-value").textContent = e.target.value + "%";
+  saveState();
+});
+document.getElementById("setting-theme-switch").addEventListener("click", () => {
+  toggleTheme();
+  document.getElementById("setting-theme-switch").classList.toggle("on",
+    document.documentElement.getAttribute("data-theme") === "dark");
+});
+document.getElementById("setting-autocarry-switch").addEventListener("click", () => {
+  state.settings.autoCarry = !state.settings.autoCarry;
+  saveState();
+  document.getElementById("setting-autocarry-switch").classList.toggle("on", state.settings.autoCarry);
+});
+document.getElementById("setting-notif-switch").addEventListener("click", async () => {
+  if(!state.settings.notifications){
+    if("Notification" in window){
+      const r = await Notification.requestPermission();
+      if(r === "granted"){
+        state.settings.notifications = true;
+        new Notification("CEO Daily Drill", { body: "Уведомления включены. Буду напоминать утром, днём и вечером." });
+      }
+    }
+  }else{
+    state.settings.notifications = false;
+  }
+  saveState();
+  document.getElementById("setting-notif-switch").classList.toggle("on", state.settings.notifications);
+});
+
+/* ============================================================
+   ЭКСПОРТ / ИМПОРТ / ОЧИСТКА
+   ============================================================ */
+function exportData(){
+  const blob = new Blob([JSON.stringify(state, null, 2)], { type: "application/json" });
+  const url = URL.createObjectURL(blob);
+  const a = document.createElement("a");
+  a.href = url;
+  a.download = `ceo-drill-backup-${todayKey()}.json`;
+  a.click();
+  URL.revokeObjectURL(url);
+}
+function importData(file){
+  const reader = new FileReader();
+  reader.onload = e => {
+    try{
+      const parsed = JSON.parse(e.target.result);
+      if(!parsed.settings || !parsed.streak) throw new Error("Неверный формат");
+      if(confirm("Импортировать данные? Текущая история будет заменена.")){
+        state = deepMerge(defaultState(), parsed);
+        saveState();
+        applyTheme();
+        render();
+        alert("Импорт выполнен");
+      }
+    }catch(err){
+      alert("Не удалось импортировать: " + err.message);
+    }
+  };
+  reader.readAsText(file);
+}
+function wipeAll(){
+  if(!confirm("Удалить всю историю? Это действие необратимо.")) return;
+  if(!confirm("Точно уверены? Восстановить данные будет невозможно.")) return;
+  localStorage.removeItem(STORE_KEY);
+  state = defaultState();
+  ensureCurrentDay();
+  applyTheme();
+  render();
+}
+
+document.getElementById("btn-export").addEventListener("click", exportData);
+document.getElementById("btn-export-2").addEventListener("click", exportData);
+document.getElementById("btn-import").addEventListener("click", () => document.getElementById("import-file").click());
+document.getElementById("btn-import-2").addEventListener("click", () => document.getElementById("import-file").click());
+document.getElementById("import-file").addEventListener("change", e => { if(e.target.files[0]) importData(e.target.files[0]); });
+document.getElementById("btn-wipe").addEventListener("click", wipeAll);
+document.getElementById("btn-wipe-2").addEventListener("click", wipeAll);
+
+/* ============================================================
+   ONBOARDING
+   ============================================================ */
+const OB_SLIDES = [
+  { emoji: "🎯", title: "Привычка важнее задачи", text: "CEO Daily Drill — тренажёр управленческой дисциплины. Чек-лист, который превращается в утренний, дневной и вечерний ритуал." },
+  { emoji: "🔥", title: "Стрики работают", text: "Чем больше дней подряд вы закрываете ≥ 80% задач — тем длиннее огонь. Пропустили день — стрик обнуляется. Это отрезвляет." },
+  { emoji: "📊", title: "Прогресс видно сразу", text: "Тепловая карта, графики, топ пропущенных задач — вся обратная связь под рукой. Все данные хранятся только в вашем браузере." }
+];
+let obIndex = 0;
+function renderOnboarding(){
+  const s = OB_SLIDES[obIndex];
+  document.getElementById("ob-emoji").textContent = s.emoji;
+  document.getElementById("ob-title").textContent = s.title;
+  document.getElementById("ob-text").textContent = s.text;
+  const dots = document.getElementById("ob-dots");
+  dots.innerHTML = "";
+  OB_SLIDES.forEach((_,i) => {
+    const d = document.createElement("div");
+    d.className = "onboarding-dot" + (i===obIndex ? " active" : "");
+    dots.appendChild(d);
+  });
+  document.getElementById("ob-next").textContent = obIndex === OB_SLIDES.length - 1 ? "Начать" : "Дальше";
+}
+document.getElementById("ob-next").addEventListener("click", () => {
+  if(obIndex < OB_SLIDES.length - 1){ obIndex++; renderOnboarding(); }
+  else{ finishOnboarding(); }
+});
+document.getElementById("ob-skip").addEventListener("click", finishOnboarding);
+function finishOnboarding(){
+  state.settings.onboardingDone = true;
+  saveState();
+  document.getElementById("onboarding").classList.add("hidden");
+}
+function maybeShowOnboarding(){
+  if(!state.settings.onboardingDone){
+    document.getElementById("onboarding").classList.remove("hidden");
+    renderOnboarding();
+  }
+}
+
+/* ============================================================
+   УВЕДОМЛЕНИЯ (ПРОСТАЯ ЛОГИКА)
+   ============================================================ */
+function scheduleNotifications(){
+  if(!state.settings.notifications) return;
+  if(!("Notification" in window) || Notification.permission !== "granted") return;
+  // Простые напоминания на сегодня: 09:00, 14:00, 19:00
+  const times = [
+    { h:9,  m:0,  text:"🌅 Утренний чек-лист ждёт" },
+    { h:14, m:0,  text:"☀️ Промежуточная сверка дня" },
+    { h:19, m:0,  text:"🌙 Пора подводить итоги дня" }
+  ];
+  const now = new Date();
+  times.forEach(t => {
+    const when = new Date(); when.setHours(t.h, t.m, 0, 0);
+    const delay = when - now;
+    if(delay > 0 && delay < 86400000){
+      setTimeout(() => {
+        try{ new Notification("CEO Daily Drill", { body: t.text }); }catch(e){}
+      }, delay);
+    }
+  });
+}
+
+/* ============================================================
+   ПЕЧАТЬ
+   ============================================================ */
+document.getElementById("btn-print").addEventListener("click", () => window.print());
+
+/* ============================================================
+   УТИЛИТЫ
+   ============================================================ */
+function escapeHTML(s){
+  if(s == null) return "";
+  return String(s).replace(/[&<>"']/g, c => ({"&":"&amp;","<":"&lt;",">":"&gt;",'"':"&quot;","'":"&#39;"})[c]);
+}
+function vibrate(ms){
+  if("vibrate" in navigator) navigator.vibrate(ms);
+}
+
+/* ============================================================
+   РЕНДЕР ПО ВКЛАДКАМ
+   ============================================================ */
+function render(){
+  if(currentPage === "today") renderToday();
+  else if(currentPage === "week") renderWeek();
+  else if(currentPage === "month") renderMonth();
+  else if(currentPage === "quarter") renderQuarter();
+  else if(currentPage === "stats") renderStats();
+}
+
+/* ============================================================
+   СОБЫТИЯ
+   ============================================================ */
+document.querySelectorAll(".bottom-nav button").forEach(b => {
+  b.addEventListener("click", () => navigate(b.dataset.page));
+});
+document.getElementById("btn-theme").addEventListener("click", toggleTheme);
+document.getElementById("btn-theme-side").addEventListener("click", toggleTheme);
+document.getElementById("btn-settings").addEventListener("click", openSettings);
+document.getElementById("btn-settings-side").addEventListener("click", openSettings);
+document.getElementById("btn-end-day").addEventListener("click", openEndDay);
+document.getElementById("btn-confirm-end-day").addEventListener("click", confirmEndDay);
+document.getElementById("btn-week-summary").addEventListener("click", openWeekSummary);
+
+/* ============================================================
+   СТАРТ
+   ============================================================ */
+function init(){
+  applyTheme();
+  ensureCurrentDay();
+  buildSidebar();
+  maybeShowOnboarding();
+  scheduleNotifications();
+  render();
+
+  // Автообновление даты раз в минуту (на случай смены суток при открытой вкладке)
+  setInterval(() => {
+    if(state.currentDay?.date !== todayKey()){
+      ensureCurrentDay();
+      render();
+    }
+  }, 60000);
+}
+
+init();
+</script>
+</body>
+</html>
