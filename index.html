@@ -7,8 +7,25 @@
 <meta name="description" content="CEO Daily Drill — тренажёр ежедневных управленческих привычек генерального директора." />
 <title>CEO Daily Drill</title>
 
-<!-- Chart.js (единственная внешняя зависимость) -->
+<!-- Внешние зависимости: Chart.js + Firebase -->
 <script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.1/dist/chart.umd.min.js"></script>
+<script type="module">
+  import { initializeApp } from "https://www.gstatic.com/firebasejs/10.12.2/firebase-app.js";
+  import {
+    getAuth, GoogleAuthProvider, signInWithPopup, signInWithRedirect,
+    getRedirectResult, onAuthStateChanged, signOut
+  } from "https://www.gstatic.com/firebasejs/10.12.2/firebase-auth.js";
+  import {
+    getFirestore, doc, getDoc, setDoc, serverTimestamp, onSnapshot
+  } from "https://www.gstatic.com/firebasejs/10.12.2/firebase-firestore.js";
+  // Экспортируем в window — чтобы основной (не-module) скрипт мог пользоваться
+  window.__fb = {
+    initializeApp, getAuth, GoogleAuthProvider, signInWithPopup, signInWithRedirect,
+    getRedirectResult, onAuthStateChanged, signOut,
+    getFirestore, doc, getDoc, setDoc, serverTimestamp, onSnapshot
+  };
+  window.dispatchEvent(new Event("fb-ready"));
+</script>
 
 <style>
 /* ============================================================
@@ -685,8 +702,114 @@ p{margin:0}
 }
 
 /* ============================================================
-   UTIL
+   AUTH-ЭКРАН
    ============================================================ */
+.auth-screen{
+  position:fixed;inset:0;z-index:450;
+  background:var(--bg);
+  display:flex;align-items:center;justify-content:center;
+  padding:24px;padding-top:calc(24px + env(safe-area-inset-top));
+  overflow-y:auto;
+}
+.auth-card{
+  width:100%;max-width:420px;
+  background:var(--surface);
+  border:1px solid var(--border);
+  border-radius:var(--radius-xl);
+  padding:32px 28px;
+  box-shadow:var(--shadow-lg);
+  animation: modal-in 300ms cubic-bezier(.2,.7,.3,1);
+}
+.auth-logo{
+  display:flex;align-items:center;justify-content:center;gap:10px;
+  margin-bottom:20px;
+}
+.auth-logo .brand-mark{width:44px;height:44px;font-size:18px;border-radius:12px}
+.auth-logo .auth-name{font-size:20px;font-weight:800}
+.auth-title{font-size:22px;font-weight:700;text-align:center;margin-bottom:8px}
+.auth-sub{color:var(--text-muted);font-size:14px;text-align:center;margin-bottom:24px;line-height:1.5}
+.auth-field{margin-bottom:14px}
+.auth-field label{display:block;font-size:13px;font-weight:600;margin-bottom:6px;color:var(--text-muted)}
+.auth-field .input{font-size:15px}
+.auth-submit{width:100%;margin-top:8px;padding:12px;font-size:15px}
+.auth-switch{text-align:center;margin-top:20px;font-size:14px;color:var(--text-muted)}
+.auth-switch button{color:var(--accent);font-weight:600;text-decoration:underline;padding:4px}
+.auth-error{
+  background:var(--danger-soft);color:var(--danger);
+  padding:10px 14px;border-radius:10px;font-size:13px;
+  margin-bottom:14px;display:none;
+}
+.auth-error.show{display:block;animation:fade 200ms ease}
+.auth-info{
+  background:var(--accent-soft);color:var(--accent);
+  padding:10px 14px;border-radius:10px;font-size:13px;
+  margin-bottom:14px;display:none;
+}
+.auth-info.show{display:block;animation:fade 200ms ease}
+.auth-offline-note{
+  margin-top:20px;padding:14px;
+  background:var(--surface-2);border-radius:12px;
+  font-size:13px;color:var(--text-muted);line-height:1.5;
+  text-align:center;
+}
+.auth-offline-note button{
+  display:block;margin:10px auto 0;
+  color:var(--accent);font-weight:600;text-decoration:underline;
+}
+.google-btn{
+  width:100%;
+  background:#fff;
+  color:#1F1F1F;
+  border:1px solid #DADCE0;
+  padding:12px 20px;
+  font-size:15px;font-weight:600;
+  display:flex;align-items:center;justify-content:center;gap:12px;
+  box-shadow: 0 1px 2px rgba(0,0,0,.05);
+  transition: all var(--transition);
+  margin-bottom:8px;
+}
+.google-btn:hover{
+  background:#F7F8F8;
+  box-shadow: 0 2px 6px rgba(0,0,0,.1);
+}
+.google-btn:active{background:#EBEEF0}
+.google-btn:disabled{opacity:.6;cursor:wait}
+[data-theme="dark"] .google-btn{
+  background:#1F1F1F;color:#E3E3E3;border-color:#3C4043;
+}
+[data-theme="dark"] .google-btn:hover{background:#2D2D2D}
+
+/* ============================================================
+   ИНДИКАТОР СИНХРОНИЗАЦИИ
+   ============================================================ */
+.sync-chip{
+  display:inline-flex;align-items:center;gap:6px;
+  font-size:12px;font-weight:500;
+  padding:4px 10px;border-radius:999px;
+  background:var(--surface-2);color:var(--text-muted);
+  transition: all var(--transition);
+}
+.sync-chip.syncing{background:var(--warning-soft);color:var(--warning)}
+.sync-chip.synced{background:var(--success-soft);color:var(--success)}
+.sync-chip.error{background:var(--danger-soft);color:var(--danger)}
+.sync-chip.offline{background:var(--surface-2);color:var(--text-muted)}
+.sync-dot{width:6px;height:6px;border-radius:50%;background:currentColor}
+.sync-chip.syncing .sync-dot{animation: pulse 1s infinite}
+@keyframes pulse{0%,100%{opacity:1}50%{opacity:.3}}
+
+.user-chip{
+  display:flex;align-items:center;gap:8px;
+  padding:6px 10px;border-radius:999px;
+  background:var(--surface-2);
+  font-size:13px;font-weight:500;
+}
+.user-avatar{
+  width:24px;height:24px;border-radius:50%;
+  background:linear-gradient(135deg,var(--accent),var(--accent-hover));
+  color:#fff;display:grid;place-items:center;
+  font-size:11px;font-weight:700;flex-shrink:0;
+}
+
 .row{display:flex;gap:12px;flex-wrap:wrap;align-items:center}
 .spacer{flex:1}
 .muted{color:var(--text-muted)}
@@ -704,6 +827,16 @@ p{margin:0}
     </div>
     <nav id="sidebar-nav" role="navigation"></nav>
     <div class="sidebar-footer">
+      <div id="sidebar-user-block" style="padding:8px 4px 12px;display:none">
+        <div class="user-chip" style="margin-bottom:8px">
+          <div class="user-avatar" id="sidebar-avatar">?</div>
+          <div style="min-width:0;flex:1;overflow:hidden;text-overflow:ellipsis;white-space:nowrap" id="sidebar-email">—</div>
+        </div>
+        <div class="sync-chip offline" id="sync-chip-desktop" style="width:100%;justify-content:center">
+          <span class="sync-dot"></span>
+          <span id="sync-text-desktop">офлайн</span>
+        </div>
+      </div>
       <button id="btn-settings-side" aria-label="Настройки">
         <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="3"/><path d="M19.4 15a1.65 1.65 0 0 0 .33 1.82l.06.06a2 2 0 0 1 0 2.83 2 2 0 0 1-2.83 0l-.06-.06a1.65 1.65 0 0 0-1.82-.33 1.65 1.65 0 0 0-1 1.51V21a2 2 0 0 1-4 0v-.09a1.65 1.65 0 0 0-1-1.51 1.65 1.65 0 0 0-1.82.33l-.06.06a2 2 0 0 1-2.83 0 2 2 0 0 1 0-2.83l.06-.06a1.65 1.65 0 0 0 .33-1.82 1.65 1.65 0 0 0-1.51-1H3a2 2 0 0 1 0-4h.09a1.65 1.65 0 0 0 1.51-1 1.65 1.65 0 0 0-.33-1.82l-.06-.06a2 2 0 0 1 0-2.83 2 2 0 0 1 2.83 0l.06.06a1.65 1.65 0 0 0 1.82.33H9a1.65 1.65 0 0 0 1-1.51V3a2 2 0 0 1 4 0v.09a1.65 1.65 0 0 0 1 1.51 1.65 1.65 0 0 0 1.82-.33l.06-.06a2 2 0 0 1 2.83 0 2 2 0 0 1 0 2.83l-.06.06a1.65 1.65 0 0 0-.33 1.82V9a1.65 1.65 0 0 0 1.51 1H21a2 2 0 0 1 0 4h-.09a1.65 1.65 0 0 0-1.51 1z"/></svg>
         Настройки
@@ -711,6 +844,10 @@ p{margin:0}
       <button id="btn-theme-side" aria-label="Переключить тему">
         <svg id="theme-icon-side" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M21 12.79A9 9 0 1 1 11.21 3 7 7 0 0 0 21 12.79z"/></svg>
         <span id="theme-label-side">Тёмная тема</span>
+      </button>
+      <button id="btn-logout-side" style="display:none" aria-label="Выйти">
+        <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M9 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h4"/><polyline points="16 17 21 12 16 7"/><line x1="21" y1="12" x2="9" y2="12"/></svg>
+        Выйти
       </button>
     </div>
   </aside>
@@ -721,6 +858,10 @@ p{margin:0}
       <div class="brand">
         <div class="brand-mark">C</div>
         <div id="topbar-title">CEO Daily Drill</div>
+      </div>
+      <div class="sync-chip offline" id="sync-chip-mobile" title="Статус синхронизации">
+        <span class="sync-dot"></span>
+        <span id="sync-text-mobile">офлайн</span>
       </div>
       <button class="icon-btn" id="btn-theme" aria-label="Переключить тему">
         <svg id="theme-icon" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M21 12.79A9 9 0 1 1 11.21 3 7 7 0 0 0 21 12.79z"/></svg>
@@ -930,6 +1071,27 @@ p{margin:0}
       <button class="modal-close" data-close>✕</button>
     </div>
     <div>
+      <div class="setting-row" id="setting-account-row" style="display:none;flex-direction:column;align-items:stretch">
+        <div style="display:flex;justify-content:space-between;align-items:flex-start;gap:12px;margin-bottom:8px">
+          <div>
+            <div class="setting-label">Аккаунт</div>
+            <div class="setting-desc" id="setting-account-email">—</div>
+          </div>
+        </div>
+        <div class="row">
+          <div class="sync-chip" id="sync-chip-settings"><span class="sync-dot"></span><span id="sync-text-settings">—</span></div>
+          <div class="spacer"></div>
+          <button class="btn btn-secondary" id="btn-sync-now">↻ Синхронизировать</button>
+          <button class="btn btn-ghost" id="btn-logout">Выйти</button>
+        </div>
+      </div>
+      <div class="setting-row" id="setting-signin-row" style="display:none">
+        <div>
+          <div class="setting-label">Облачная синхронизация</div>
+          <div class="setting-desc">Войдите, чтобы видеть данные с других устройств</div>
+        </div>
+        <button class="btn btn-primary" id="btn-signin-from-settings">Войти</button>
+      </div>
       <div class="setting-row">
         <div>
           <div class="setting-label">Имя</div>
@@ -1007,7 +1169,42 @@ p{margin:0}
   </div>
 </div>
 
-<!-- ===================== ONBOARDING ===================== -->
+<!-- ===================== AUTH SCREEN ===================== -->
+<div class="auth-screen hidden" id="auth-screen">
+  <div class="auth-card">
+    <div class="auth-logo">
+      <div class="brand-mark">C</div>
+      <div class="auth-name">CEO Daily Drill</div>
+    </div>
+    <div class="auth-title">Вход в приложение</div>
+    <div class="auth-sub">Войдите через Google, чтобы синхронизировать данные между телефоном и компьютером</div>
+
+    <div class="auth-error" id="auth-error"></div>
+    <div class="auth-info" id="auth-info"></div>
+
+    <button class="btn google-btn" id="btn-google-signin">
+      <svg width="20" height="20" viewBox="0 0 48 48" aria-hidden="true">
+        <path fill="#FFC107" d="M43.6 20.5H42V20H24v8h11.3c-1.6 4.7-6 8-11.3 8-6.6 0-12-5.4-12-12s5.4-12 12-12c3.1 0 5.9 1.2 8 3.1l5.7-5.7C34 6.1 29.3 4 24 4 13 4 4 13 4 24s9 20 20 20 20-9 20-20c0-1.3-.1-2.4-.4-3.5z"/>
+        <path fill="#FF3D00" d="M6.3 14.7l6.6 4.8C14.7 15.1 19 12 24 12c3.1 0 5.9 1.2 8 3.1l5.7-5.7C34 6.1 29.3 4 24 4 16.3 4 9.7 8.3 6.3 14.7z"/>
+        <path fill="#4CAF50" d="M24 44c5.2 0 9.9-2 13.4-5.2l-6.2-5.2C29.2 34.9 26.7 36 24 36c-5.3 0-9.7-3.3-11.3-8l-6.5 5C9.4 39.6 16.1 44 24 44z"/>
+        <path fill="#1976D2" d="M43.6 20.5H42V20H24v8h11.3c-.8 2.2-2.1 4.1-3.9 5.6l6.2 5.2c-.4.4 6.4-4.7 6.4-14.8 0-1.3-.1-2.4-.4-3.5z"/>
+      </svg>
+      <span>Войти через Google</span>
+    </button>
+
+    <div class="auth-offline-note" id="auth-offline-note">
+      Firebase не настроен или недоступен.
+      <button id="auth-use-local">Продолжить без синхронизации</button>
+    </div>
+
+    <div class="auth-offline-note" id="auth-optional-local" style="background:transparent;border-top:1px solid var(--border);border-radius:0;padding-top:14px;margin-top:20px">
+      Не хотите входить?
+      <button id="auth-use-local-opt">Работать только на этом устройстве</button>
+    </div>
+  </div>
+</div>
+
+
 <div class="onboarding hidden" id="onboarding">
   <div class="onboarding-slides">
     <div class="onboarding-slide" id="onboarding-slide">
@@ -1024,6 +1221,33 @@ p{margin:0}
 </div>
 
 <script>
+/* ============================================================
+   КОНФИГУРАЦИЯ FIREBASE
+   --------------------------------------------------------------
+   Чтобы включить синхронизацию между устройствами через Google:
+   1. Зайдите в Firebase Console → выберите свой проект
+      (или создайте новый на console.firebase.google.com).
+   2. Нажмите на шестерёнку → Project settings → вкладка "General".
+   3. Внизу в разделе "Your apps" нажмите "Add app" → иконка Web (</>).
+   4. Зарегистрируйте приложение, скопируйте объект firebaseConfig
+      и замените значения ниже.
+   5. В разделе "Authentication → Sign-in method" включите
+      провайдер "Google".
+   6. В разделе "Firestore Database" создайте базу (режим production),
+      затем в "Rules" вставьте правила из README.
+   7. В "Authentication → Settings → Authorized domains" добавьте
+      домен GitHub Pages (например, username.github.io).
+   Если оставить значения пустыми — приложение будет работать
+   только локально, без синхронизации.
+   ============================================================ */
+const FIREBASE_CONFIG = {
+  apiKey: "AIzaSyAxwQUORAscycy1KCE9_HhHk9mjO1qX2rU",            // "AIza..."
+  authDomain: "ceo-daily-drill.firebaseapp.com",        // "your-project.firebaseapp.com"
+  projectId: "ceo-daily-drill",         // "your-project"
+  appId: "1:152227033932:web:0b1fd0cb71f4ead83f55e9"              // "1:12345:web:abcdef"
+  // storageBucket и messagingSenderId не обязательны для нашей задачи
+};
+
 /* ============================================================
    ДАННЫЕ: ПУНКТЫ ЧЕК-ЛИСТОВ
    ============================================================ */
@@ -1134,30 +1358,37 @@ const NAV_ITEMS = [
 ];
 
 /* ============================================================
-   ХРАНИЛИЩЕ
+   ХРАНИЛИЩЕ (локальное + облачное)
    ============================================================ */
-const STORE_KEY = "ceoDailyDrill_v1";
+const STORE_PREFIX = "ceoDailyDrill_v1";
+const LOCAL_USER_ID = "__local__";
+let currentUserId = LOCAL_USER_ID; // будет заменён на uid из Firebase после входа
+
+function storeKey(uid = currentUserId){
+  return `${STORE_PREFIX}__${uid}`;
+}
 
 const defaultState = () => ({
   settings: {
     name: "",
-    theme: "system",    // system | light | dark
+    theme: "system",
     threshold: 80,
     notifications: false,
     autoCarry: true,
     onboardingDone: false
   },
-  history: {},      // YYYY-MM-DD -> dayRecord
-  currentDay: null, // { date, morning:{idx:bool}, day:{}, evening:{}, top3:[{text,done}], notes:{ "morning:3": "заметка" } }
-  weekly: {},       // YYYY-Www -> { comment, byDay:{1:[true...]} }
-  monthly: {},      // YYYY-MM -> { [idx]: { done:bool, note:string, lastChecked:date } }
-  quarterly: {},    // YYYY-Qn -> { [idx]: bool }
-  streak: { current: 0, longest: 0, lastCompletedDate: null }
+  history: {},
+  currentDay: null,
+  weekly: {},
+  monthly: {},
+  quarterly: {},
+  streak: { current: 0, longest: 0, lastCompletedDate: null },
+  _meta: { updatedAt: 0 }
 });
 
 function loadState(){
   try{
-    const raw = localStorage.getItem(STORE_KEY);
+    const raw = localStorage.getItem(storeKey());
     if(!raw) return defaultState();
     const parsed = JSON.parse(raw);
     return deepMerge(defaultState(), parsed);
@@ -1166,9 +1397,13 @@ function loadState(){
     return defaultState();
   }
 }
-function saveState(){
-  try{ localStorage.setItem(STORE_KEY, JSON.stringify(state)); }
-  catch(e){ console.error("Ошибка записи state:", e); }
+function saveState(skipSync = false){
+  try{
+    state._meta = state._meta || {};
+    state._meta.updatedAt = Date.now();
+    localStorage.setItem(storeKey(), JSON.stringify(state));
+    if(!skipSync) scheduleCloudPush();
+  }catch(e){ console.error("Ошибка записи state:", e); }
 }
 function deepMerge(base, over){
   const out = Array.isArray(base) ? [...base] : {...base};
@@ -1183,6 +1418,315 @@ function deepMerge(base, over){
 }
 
 let state = loadState();
+
+/* ============================================================
+   ОБЛАЧНАЯ СИНХРОНИЗАЦИЯ (FIREBASE)
+   ============================================================ */
+let fbApp = null;
+let fbAuth = null;
+let fbDb = null;
+let fbUser = null;              // { uid, email, displayName, photoURL }
+let fbEnabled = false;
+let syncStatus = "offline";
+let pushTimer = null;
+let unsubscribeDoc = null;      // отписка от onSnapshot
+let lastRemoteSave = 0;         // чтобы отличать свои же записи от чужих
+
+function waitForFirebaseSDK(){
+  return new Promise(resolve => {
+    if(window.__fb) return resolve();
+    window.addEventListener("fb-ready", () => resolve(), { once: true });
+    // На всякий случай — таймаут
+    setTimeout(() => resolve(), 3000);
+  });
+}
+
+async function initFirebase(){
+  if(!FIREBASE_CONFIG.apiKey || !FIREBASE_CONFIG.projectId) return false;
+  await waitForFirebaseSDK();
+  if(!window.__fb) return false;
+  try{
+    const fb = window.__fb;
+    fbApp = fb.initializeApp(FIREBASE_CONFIG);
+    fbAuth = fb.getAuth(fbApp);
+    fbDb = fb.getFirestore(fbApp);
+    fbEnabled = true;
+    return true;
+  }catch(e){
+    console.error("Firebase init error:", e);
+    return false;
+  }
+}
+
+function setSyncStatus(s, text){
+  syncStatus = s;
+  const labels = {
+    offline: "офлайн",
+    syncing: "синхронизация…",
+    synced:  "синхронизировано",
+    error:   "ошибка"
+  };
+  const label = text || labels[s] || s;
+  ["sync-chip-mobile","sync-chip-desktop","sync-chip-settings"].forEach(id => {
+    const el = document.getElementById(id);
+    if(!el) return;
+    el.classList.remove("offline","syncing","synced","error");
+    el.classList.add(s);
+  });
+  ["sync-text-mobile","sync-text-desktop","sync-text-settings"].forEach(id => {
+    const el = document.getElementById(id);
+    if(el) el.textContent = label;
+  });
+}
+
+function userDocRef(){
+  if(!fbDb || !fbUser) return null;
+  return window.__fb.doc(fbDb, "userState", fbUser.uid);
+}
+
+async function cloudPull(){
+  if(!fbEnabled || !fbUser) return null;
+  setSyncStatus("syncing");
+  try{
+    const snap = await window.__fb.getDoc(userDocRef());
+    setSyncStatus("synced");
+    return snap.exists() ? snap.data() : null;
+  }catch(e){
+    console.error("cloudPull:", e);
+    setSyncStatus("error");
+    return null;
+  }
+}
+
+async function cloudPush(){
+  if(!fbEnabled || !fbUser) return;
+  setSyncStatus("syncing");
+  try{
+    const payload = {...state};
+    lastRemoteSave = Date.now();
+    await window.__fb.setDoc(userDocRef(), {
+      payload,
+      updatedAt: window.__fb.serverTimestamp(),
+      clientTs: lastRemoteSave
+    });
+    setSyncStatus("synced");
+  }catch(e){
+    console.error("cloudPush:", e);
+    setSyncStatus("error");
+  }
+}
+
+function scheduleCloudPush(){
+  if(!fbEnabled || !fbUser) return;
+  clearTimeout(pushTimer);
+  pushTimer = setTimeout(cloudPush, 800);
+}
+
+async function mergeFromCloud(cloud){
+  if(!cloud || !cloud.payload) return;
+  const cloudTs = cloud.clientTs || 0;
+  const localTs = state._meta?.updatedAt || 0;
+  if(cloudTs > localTs){
+    state = deepMerge(defaultState(), cloud.payload);
+    state._meta = state._meta || {};
+    state._meta.updatedAt = cloudTs;
+    saveState(true);
+  }else if(localTs > cloudTs){
+    await cloudPush();
+  }
+}
+
+function subscribeToRemoteChanges(){
+  if(!fbEnabled || !fbUser) return;
+  if(unsubscribeDoc){ unsubscribeDoc(); unsubscribeDoc = null; }
+  unsubscribeDoc = window.__fb.onSnapshot(userDocRef(), snap => {
+    if(!snap.exists()) return;
+    const data = snap.data();
+    // Игнорируем наши же только что записанные изменения
+    if(data.clientTs && Math.abs(data.clientTs - lastRemoteSave) < 2000) return;
+    // Пришли изменения с другого устройства — мёрджим
+    mergeFromCloud(data).then(() => {
+      // Переотрисовать текущий экран
+      render();
+      setSyncStatus("synced");
+    });
+  }, err => {
+    console.error("onSnapshot:", err);
+    setSyncStatus("error");
+  });
+}
+
+/* ============================================================
+   AUTH UI
+   ============================================================ */
+function showAuthScreen(){
+  document.getElementById("auth-screen").classList.remove("hidden");
+  const googleBtn = document.getElementById("btn-google-signin");
+  const offlineNote = document.getElementById("auth-offline-note");
+  const optionalLocal = document.getElementById("auth-optional-local");
+  if(!fbEnabled){
+    googleBtn.style.display = "none";
+    offlineNote.style.display = "";
+    optionalLocal.style.display = "none";
+  }else{
+    googleBtn.style.display = "";
+    offlineNote.style.display = "none";
+    optionalLocal.style.display = "";
+  }
+  clearAuthMessages();
+}
+function hideAuthScreen(){
+  document.getElementById("auth-screen").classList.add("hidden");
+}
+
+function clearAuthMessages(){
+  document.getElementById("auth-error").classList.remove("show");
+  document.getElementById("auth-info").classList.remove("show");
+}
+function showAuthError(msg){
+  const el = document.getElementById("auth-error");
+  el.textContent = msg;
+  el.classList.add("show");
+  document.getElementById("auth-info").classList.remove("show");
+}
+function showAuthInfo(msg){
+  const el = document.getElementById("auth-info");
+  el.textContent = msg;
+  el.classList.add("show");
+  document.getElementById("auth-error").classList.remove("show");
+}
+
+async function handleGoogleSignIn(){
+  if(!fbEnabled) return;
+  clearAuthMessages();
+  const btn = document.getElementById("btn-google-signin");
+  btn.disabled = true;
+  const originalHTML = btn.innerHTML;
+  btn.innerHTML = "<span>Открываем окно Google…</span>";
+  try{
+    const provider = new window.__fb.GoogleAuthProvider();
+    provider.setCustomParameters({ prompt: "select_account" });
+    // Пробуем popup. На мобилках часто блокируется — падаем в redirect.
+    try{
+      const res = await window.__fb.signInWithPopup(fbAuth, provider);
+      if(res.user) await onSignedIn(res.user);
+    }catch(popupErr){
+      const code = popupErr?.code || "";
+      if(code.includes("popup-blocked") || code.includes("cancelled-popup-request") || code.includes("popup-closed")){
+        showAuthInfo("Открываем вход в текущем окне…");
+        await window.__fb.signInWithRedirect(fbAuth, provider);
+        // redirect — страница перезагрузится, onSignedIn сработает через getRedirectResult
+        return;
+      }
+      throw popupErr;
+    }
+  }catch(e){
+    console.error("Google sign-in:", e);
+    const code = e?.code || "";
+    if(code.includes("unauthorized-domain")){
+      showAuthError("Этот домен не добавлен в разрешённые в Firebase (Authentication → Settings → Authorized domains).");
+    }else if(code.includes("network-request-failed")){
+      showAuthError("Нет соединения с Google. Проверьте интернет.");
+    }else if(code.includes("operation-not-allowed")){
+      showAuthError("Провайдер Google не включён в Firebase Authentication → Sign-in method.");
+    }else{
+      showAuthError(e.message || "Не удалось войти");
+    }
+  }finally{
+    btn.disabled = false;
+    btn.innerHTML = originalHTML;
+  }
+}
+
+async function onSignedIn(user){
+  fbUser = {
+    uid: user.uid,
+    email: user.email || "",
+    displayName: user.displayName || "",
+    photoURL: user.photoURL || ""
+  };
+  currentUserId = user.uid;
+
+  // Миграция локальных данных (если работали до входа)
+  const hadLocal = !!localStorage.getItem(storeKey(LOCAL_USER_ID));
+  const hasUser  = !!localStorage.getItem(storeKey(user.uid));
+  if(hadLocal && !hasUser){
+    const raw = localStorage.getItem(storeKey(LOCAL_USER_ID));
+    localStorage.setItem(storeKey(user.uid), raw);
+  }
+  state = loadState();
+
+  // Если имя в настройках пустое — подставим из Google
+  if(!state.settings.name && fbUser.displayName){
+    state.settings.name = fbUser.displayName.split(" ")[0];
+    saveState(true);
+  }
+
+  const cloud = await cloudPull();
+  if(cloud){
+    await mergeFromCloud(cloud);
+  }else{
+    await cloudPush();
+  }
+  subscribeToRemoteChanges();
+
+  hideAuthScreen();
+  updateUserUI();
+  applyTheme();
+  ensureCurrentDay();
+  buildSidebar();
+  maybeShowOnboarding();
+  scheduleNotifications();
+  render();
+}
+
+async function handleSignOut(){
+  if(!fbAuth) return;
+  if(unsubscribeDoc){ unsubscribeDoc(); unsubscribeDoc = null; }
+  await window.__fb.signOut(fbAuth);
+  fbUser = null;
+  currentUserId = LOCAL_USER_ID;
+  state = loadState();
+  setSyncStatus("offline");
+  updateUserUI();
+  showAuthScreen();
+}
+
+function updateUserUI(){
+  const signedIn = !!fbUser;
+  const sb1 = document.getElementById("sidebar-user-block");
+  if(sb1) sb1.style.display = signedIn ? "" : "none";
+  if(signedIn){
+    const display = fbUser.displayName || fbUser.email || "—";
+    document.getElementById("sidebar-email").textContent = display;
+    const avatar = document.getElementById("sidebar-avatar");
+    if(fbUser.photoURL){
+      avatar.innerHTML = `<img src="${fbUser.photoURL}" alt="" style="width:100%;height:100%;border-radius:50%;object-fit:cover" referrerpolicy="no-referrer"/>`;
+    }else{
+      avatar.textContent = ((fbUser.displayName || fbUser.email || "?")[0] || "?").toUpperCase();
+    }
+  }
+  const lbs = document.getElementById("btn-logout-side");
+  if(lbs) lbs.style.display = signedIn ? "" : "none";
+  const mobileChip = document.getElementById("sync-chip-mobile");
+  if(mobileChip) mobileChip.style.display = fbEnabled ? "" : "none";
+  document.getElementById("setting-account-row").style.display = signedIn ? "flex" : "none";
+  document.getElementById("setting-signin-row").style.display = (!signedIn && fbEnabled) ? "flex" : "none";
+  if(signedIn){
+    document.getElementById("setting-account-email").textContent = fbUser.email || fbUser.displayName || "—";
+  }
+}
+
+function useLocalOnly(){
+  hideAuthScreen();
+  updateUserUI();
+  applyTheme();
+  ensureCurrentDay();
+  buildSidebar();
+  maybeShowOnboarding();
+  scheduleNotifications();
+  render();
+}
 
 /* ============================================================
    УТИЛИТЫ
@@ -2018,7 +2562,7 @@ function importData(file){
       if(!parsed.settings || !parsed.streak) throw new Error("Неверный формат");
       if(confirm("Импортировать данные? Текущая история будет заменена.")){
         state = deepMerge(defaultState(), parsed);
-        saveState();
+        saveState(); // сохранит и запустит cloud push
         applyTheme();
         render();
         alert("Импорт выполнен");
@@ -2032,11 +2576,12 @@ function importData(file){
 function wipeAll(){
   if(!confirm("Удалить всю историю? Это действие необратимо.")) return;
   if(!confirm("Точно уверены? Восстановить данные будет невозможно.")) return;
-  localStorage.removeItem(STORE_KEY);
+  localStorage.removeItem(storeKey());
   state = defaultState();
   ensureCurrentDay();
   applyTheme();
   render();
+  if(fbEnabled && fbUser) cloudPush(); // в облаке тоже обнулим
 }
 
 document.getElementById("btn-export").addEventListener("click", exportData);
@@ -2152,18 +2697,74 @@ document.getElementById("btn-end-day").addEventListener("click", openEndDay);
 document.getElementById("btn-confirm-end-day").addEventListener("click", confirmEndDay);
 document.getElementById("btn-week-summary").addEventListener("click", openWeekSummary);
 
+// Auth (Google)
+document.getElementById("btn-google-signin").addEventListener("click", handleGoogleSignIn);
+document.getElementById("auth-use-local").addEventListener("click", useLocalOnly);
+document.getElementById("auth-use-local-opt").addEventListener("click", useLocalOnly);
+
+// Logout + sync
+document.getElementById("btn-logout-side")?.addEventListener("click", handleSignOut);
+document.getElementById("btn-logout")?.addEventListener("click", () => { closeModal("modal-settings"); handleSignOut(); });
+document.getElementById("btn-sync-now")?.addEventListener("click", async () => {
+  if(!fbUser) return;
+  await cloudPush();
+  const cloud = await cloudPull();
+  if(cloud) await mergeFromCloud(cloud);
+  render();
+});
+document.getElementById("btn-signin-from-settings")?.addEventListener("click", () => {
+  closeModal("modal-settings");
+  showAuthScreen();
+});
+
 /* ============================================================
    СТАРТ
    ============================================================ */
-function init(){
-  applyTheme();
-  ensureCurrentDay();
-  buildSidebar();
-  maybeShowOnboarding();
-  scheduleNotifications();
-  render();
+async function init(){
+  const ok = await initFirebase();
 
-  // Автообновление даты раз в минуту (на случай смены суток при открытой вкладке)
+  if(ok){
+    try{
+      // Проверяем, не вернулись ли мы после signInWithRedirect
+      try{
+        const redirectRes = await window.__fb.getRedirectResult(fbAuth);
+        if(redirectRes?.user){
+          await onSignedIn(redirectRes.user);
+          return;
+        }
+      }catch(rErr){
+        console.warn("redirect result:", rErr);
+      }
+
+      // Подписываемся на изменения сессии
+      window.__fb.onAuthStateChanged(fbAuth, async (user) => {
+        if(user){
+          if(!fbUser || fbUser.uid !== user.uid){
+            await onSignedIn(user);
+          }
+        }else{
+          if(fbUser){
+            // пользователь разлогинился
+            fbUser = null;
+            currentUserId = LOCAL_USER_ID;
+            setSyncStatus("offline");
+            updateUserUI();
+            showAuthScreen();
+          }else{
+            // первая проверка — пока нет сессии
+            showAuthScreen();
+          }
+        }
+      });
+    }catch(e){
+      console.error("Firebase auth check:", e);
+      useLocalOnly();
+    }
+  }else{
+    useLocalOnly();
+  }
+
+  // Автообновление даты раз в минуту
   setInterval(() => {
     if(state.currentDay?.date !== todayKey()){
       ensureCurrentDay();
